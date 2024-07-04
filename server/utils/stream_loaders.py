@@ -40,7 +40,8 @@ class LoadStreamNoThread:
             import pafy
             source = pafy.new(source).getbest(preftype='mp4').url
         self.cap = cv2.VideoCapture(source)
-        # self.cap.set(cv2.CAP_PROP_BUFFERSIZE,5)
+        
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE,5)
 
         # cv2.set(cv2.CAP_PROP_BUFFERSIZE, my_size)
         if not self.cap.isOpened():

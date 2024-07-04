@@ -167,7 +167,7 @@ class ObjectCounter:
         self.annotator = Annotator(self.im0, self.tf, self.names)
         self.annotator.draw_region(reg_pts=self.reg_pts, color=self.region_color, thickness=self.region_thickness)
         
-        if tracks is not None:
+        if tracks is not None and tracks[0].boxes.id is not None:
             boxes = tracks[0].boxes.xyxy.cpu()
             clss = tracks[0].boxes.cls.cpu().tolist()
             track_ids = tracks[0].boxes.id.int().cpu().tolist()
@@ -286,7 +286,7 @@ class ObjectCounter:
             if tracks[0].boxes.id is None:
                 if self.view_img:
                     self.display_frames()
-                return im0
+                self.extract_and_process_tracks(None)
         # if tracks is None:
         self.extract_and_process_tracks(tracks)
 

@@ -14,10 +14,16 @@ import time
 from utils.general import image_resize
 import cv2
 import boto3
+import torch
 
 
 
-model = YOLO("yolov8n.pt") 
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f'Using device: {device}')
+model = YOLO("yolov8n.pt").to(device)
+
+
 names = {   0: 'person',  1: 'bicycle',  2: 'car',  3: 'motorcycle',  4: 'airplane',  5: 'bus',  6: 'train',  7: 'truck',
   8: 'boat',  9: 'traffic light',  10: 'fire hydrant',  11: 'stop sign',  12: 'parking meter',  13: 'bench',  14: 'bird',
   15: 'cat',  16: 'dog',  17: 'horse',  18: 'sheep',  19: 'cow',  20: 'elephant',  21: 'bear',  22: 'zebra',  23: 'giraffe',
@@ -69,7 +75,7 @@ def getConfPropertie(propertie1, propertie2=None):
     appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
     return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
 
-ipclient="ipclient""127.0.0.1"
+ipclient, _=getConfPropertie("ipclient")
 
 server = NetGear(
     address=ipclient,
@@ -82,6 +88,8 @@ server = NetGear(
 
 print("Running in ip adress : %s" % ipclient)
 
+# device: str = "mps" if torch.backends.mps.is_available() else "cpu"
+
 
 def setStatus(status):    
     # with open("app.conf",  "r") as json_data_file:
@@ -92,10 +100,21 @@ def setStatus(status):
         Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='variosjavierramirez', Key='app.json'
         )   
     return status
+
+def cv2DestroyAllWindows():    
+    for obj in gc.get_objects():
+        if isinstance(obj, LoadStreamNoThread):
+            try:
+                obj.cap.release()   
+                              
+                LOGGER.info("close release objet {obj}")
+            except:
+                LOGGER.error("An exception occurred in obj.cap.release {obj}")
+
 setStatus("offline")
 
 def region_points():
-    input_dict=getConfPropertie("region_points")
+    input_dict, _=getConfPropertie("region_points")
     output_dict = [x for x in input_dict if x['available'] == 1]
     return output_dict
 
@@ -124,16 +143,8 @@ def start():
 
 @app.route('/api/stop', methods=['GET'])
 @cross_origin()
-def stop():
-    for obj in gc.get_objects():
-        if isinstance(obj, LoadStreamNoThread):
-            try:
-                obj.cap.release()   
-                              
-                LOGGER.info("close release objet {obj}")
-            except:
-                LOGGER.error("An exception occurred in obj.cap.release {obj}")
-
+def stop():    
+    cv2DestroyAllWindows()
     response = {'message': setStatus('offline')}
     return jsonify(response)
 
@@ -144,12 +155,10 @@ data_dict = {}
 
 # loop over until KeyBoard Interrupted
 
-def service(source, isVideo=True):
-    
+def service(source, isVideo=True):    
+    cv2DestroyAllWindows()
     counter=[]
     region_points, stride =getConfPropertie("region_points", "stride")
-
-
     region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
 
     for i, rp in enumerate(region_points_dict["region_points"]):
@@ -178,15 +187,15 @@ def service(source, isVideo=True):
     # for frame_idx, batch in enumerate(dataset):
         # 
     n=0
-    while cap.isOpened:
-        
+    while cap.isOpened:        
         try:
             time.sleep(0.00000001)
-            n += 1          
-            cap.read() 
-            cap.grab() 
-            
+            n += 1        
            
+            # cap.read()
+            cap.set(cv2.CAP_PROP_FPS,25) 
+            success = cap.grab() 
+            if not success: break                      
             
             results=None
             if n % stride== 0:
