@@ -193,7 +193,7 @@ def service(source, isVideo=True):
             n += 1        
            
             # cap.read()
-            cap.set(cv2.CAP_PROP_FPS,25) 
+            # cap.set(cv2.CAP_PROP_FPS,25) 
             success = cap.grab() 
             if not success: break                      
             
