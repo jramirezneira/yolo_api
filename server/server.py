@@ -5,7 +5,7 @@ import json
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS, cross_origin
 import gc
-from ultralytics.utils.ops import LOGGERí
+# from ultralytics.utils.ops import LOGGERí
 import threading
 from ultralytics import YOLO
 from ultralytics.solutions import object_counter
