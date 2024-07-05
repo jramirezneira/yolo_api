@@ -5,7 +5,7 @@ import json
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS, cross_origin
 import gc
-# from ultralytics.utils.ops import LOGGERí
+from ultralytics.utils.ops import LOGGER
 import threading
 from ultralytics import YOLO
 from ultralytics.solutions import object_counter
@@ -86,7 +86,7 @@ server = NetGear(
     **options
 )
 
-print("Running in ip adress : %s" % ipclient)
+LOGGER.info("Running in ip adress : %s" % ipclient)
 
 # device: str = "mps" if torch.backends.mps.is_available() else "cpu"
 
@@ -105,8 +105,7 @@ def cv2DestroyAllWindows():
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
-                obj.cap.release()   
-                              
+                obj.cap.release()                                 
                 LOGGER.info("close release objet {obj}")
             except:
                 LOGGER.error("An exception occurred in obj.cap.release {obj}")
@@ -173,14 +172,14 @@ def service(source, isVideo=True):
     
     if isVideo:
         # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)        
-        # try:
+        try:
             ldst = LoadStreamNoThread(source)
             # cap = cv2.VideoCapture(source)
-            cap = ldst.getCap()
-            
-            
-        # except:
-        #      LOGGER.error("An exception occurred to open cap.release")
+            cap = ldst.getCap()            
+        except Exception as e:
+            setStatus("offline")
+            cv2DestroyAllWindows()
+            LOGGER.error("An exception occurred to open cap.release : %s" % e)
     else:
         dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
 
@@ -216,10 +215,9 @@ def service(source, isVideo=True):
                 #     yield (b'--frame\r\n'
                 #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
         except Exception as e:
-            print(e)
+            LOGGER.error("Error in while read : %s" % e)
             continue
 
-            # if cap.q.qsize()==0:
     cv2.destroyAllWindows()
     setStatus("offline")
       
