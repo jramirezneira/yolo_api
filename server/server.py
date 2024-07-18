@@ -105,10 +105,13 @@ def cv2DestroyAllWindows():
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
-                obj.cap.release()                                 
+                obj.cap.release()    
+                obj.cv2.destroyAllWindows()                             
                 LOGGER.info("close release objet {obj}")
-            except:
-                LOGGER.error("An exception occurred in obj.cap.release {obj}")
+            except Exception as e:
+                LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
+
+
 
 setStatus("offline")
 
@@ -180,6 +183,7 @@ def service(source, isVideo=True):
             setStatus("offline")
             cv2DestroyAllWindows()
             LOGGER.error("An exception occurred to open cap.release : %s" % e)
+            return
     else:
         dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
 

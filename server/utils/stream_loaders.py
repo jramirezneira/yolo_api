@@ -39,21 +39,22 @@ class LoadStreamNoThread:
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             import pafy
             source = pafy.new(source).getbest(preftype='mp4').url
-        self.cap = cv2.VideoCapture(source)
+        self.cv2= cv2
+        self.cap = self.cv2.VideoCapture(source)
         
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE,5)
+        self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,5)
 
         # cv2.set(cv2.CAP_PROP_BUFFERSIZE, my_size)
         if not self.cap.isOpened():
                 raise ConnectionError(f'Failed to open')
         
-        (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+        (major_ver, minor_ver, subminor_ver) = (self.cv2.__version__).split('.')
  
         if int(major_ver)  < 3 :
-            fps = self.cap.get(cv2.cv.CV_CAP_PROP_FPS)
+            fps = self.cap.get(self.cv2.cv.CV_CAP_PROP_FPS)
             print ("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps))
         else :
-            fps = self.cap.get(cv2.CAP_PROP_FPS)
+            fps = self.cap.get(self.cv2.CAP_PROP_FPS)
             print ("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
     
         

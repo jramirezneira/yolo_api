@@ -26,7 +26,7 @@ client = NetGear(
     ) 
 
 async def handler(websocket, path):
-    # cont=0
+    cont=0
     while True:
         # receive data from server
         frame = client.recv()
@@ -35,7 +35,7 @@ async def handler(websocket, path):
         if frame is None:
             break
         
-        # print(cont)
+       
         # cont=cont+1
             
         im0 = cv2.imencode('.jpg', frame)[1].tobytes()
