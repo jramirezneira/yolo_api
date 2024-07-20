@@ -48,7 +48,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from ultralytics_old.yolo.engine.predictor import AutoBackend as DetectMultiBackend
+from ultralytics.yolo.engine.predictor import AutoBackend as DetectMultiBackend
 from ultralytics_old.yolo.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics_old.yolo.data.dataloaders.v5loader import LoadImages, LoadScreenshots, LoadStreams
 from ultralytics_old.yolo.utils.ops import LOGGER, Profile, non_max_suppression, process_mask_native, process_mask, masks2segments, scale_coords, scale_boxes
