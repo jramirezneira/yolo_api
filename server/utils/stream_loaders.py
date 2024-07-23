@@ -43,7 +43,16 @@ class LoadStreamNoThread:
             thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2
-        self.cap = self.cv2.VideoCapture(source)        
+
+        isNOtOpen=True
+        while isNOtOpen:
+            try:
+                self.cap = self.cv2.VideoCapture(source) 
+                isNOtOpen=False
+            except self.cv2.error:
+                time.sleep(0.5)
+
+               
         self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
         if not self.cap.isOpened():
                 raise ConnectionError(f'Failed to open')
