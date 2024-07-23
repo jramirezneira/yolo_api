@@ -42,7 +42,7 @@ class LoadStreamNoThread:
             # source = pafy.new(source).getbest(preftype='mp4').url   
 
             
-            self.stopStreamRtspServer()
+            
             self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             self.thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
@@ -71,8 +71,8 @@ class LoadStreamNoThread:
             if not lin.startswith('#'):
                 print(lin)
 
-    def stopStreamRtspServer(self):
-        subprocess.Popen.terminate(self.cmd)
+    # def stopStreamRtspServer(self):
+    #     subprocess.Popen.terminate(self.cmd)
 
     def openStreamRtspServer(self, source):
         while True:
