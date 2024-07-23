@@ -35,16 +35,16 @@ class SourceTypes:
 
 
 class LoadStreamNoThread:
-    async def __init__(self, source):
+    def __init__(self, source):
         self.cmd = 'python3 stream_rtsp_server.py'
-        # self.p = None
+        self.proc = None
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             # self.p = Popen(['python3', 'stream_rtsp_server.py']) 
-            self.proc = await asyncio.create_subprocess_exec('python3','-stream_rtsp_server.py',  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            
+             
+            self.startStreamRtspServer()
             
             # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             self.thr.start()  
@@ -66,13 +66,14 @@ class LoadStreamNoThread:
 
         return None
     
-    def startStreamRtspServer(self):
-        p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True)
-        out, err = p.communicate() 
-        result = out.split('\n')
-        for lin in result:
-            if not lin.startswith('#'):
-                print(lin)
+    async def startStreamRtspServer(self):
+        self.proc = await asyncio.create_subprocess_exec('python3','-stream_rtsp_server.py',  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        # p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True)
+        # out, err = p.communicate() 
+        # result = out.split('\n')
+        # for lin in result:
+        #     if not lin.startswith('#'):
+        #         print(lin)
 
     # def stopStreamRtspServer(self):
     #     subprocess.Popen.terminate(self.cmd)
