@@ -207,8 +207,8 @@ def service(source, isVideo=True):
                     break
                 im0=image_resize(im0, height = 720)
                 dict_result=dict()
-                dict_result["verbose"] =False
-                results = model.track(im0, persist=True, imgsz=480, show=False, **dict_result)
+                dict_result["verbose"] =True
+                results = model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
 
                
                 for ctr in counter:

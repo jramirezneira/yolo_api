@@ -465,7 +465,7 @@ class Model(nn.Module):
             register_tracker(self, persist)
         kwargs["conf"] = kwargs.get("conf") or 0.1  # ByteTrack-based method needs low confidence predictions as input
         kwargs["mode"] = "track"
-        return self.predict(source=source, stream=stream,device="0", **kwargs)
+        return self.predict(source=source, stream=stream, **kwargs)
 
     def val(
         self,

@@ -21,7 +21,11 @@ from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
 from ultralytics.utils.checks import check_requirements
 
 from utils.general import image_resize
-import queue, threading, time
+import time
+import streamlink
+from gi.repository import Gst, GstRtspServer, GObject
+from stream_rtsp_server import GstServer
+
 
 
 @dataclass
@@ -38,11 +42,20 @@ class LoadStreamNoThread:
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             import pafy
-            source = pafy.new(source).getbest(preftype='mp4').url
+            source = pafy.new(source).getbest(preftype='mp4').url   
+
+            GObject.threads_init()
+
+            Gst.init(None)
+            server = GstServer()
+            loop = GObject.MainLoop()
+            loop.run()
+            source="rtsp://127.0.0.1:8554/video_stream"
+
         self.cv2= cv2
         self.cap = self.cv2.VideoCapture(source)
         
-        self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,5)
+        self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
 
         # cv2.set(cv2.CAP_PROP_BUFFERSIZE, my_size)
         if not self.cap.isOpened():
