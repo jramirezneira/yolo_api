@@ -36,6 +36,7 @@ class SourceTypes:
 class LoadStreamNoThread:
     def __init__(self, source):
         self.cmd = 'python3 stream_rtsp_server.py'
+        # self.p = None
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy

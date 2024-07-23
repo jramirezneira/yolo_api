@@ -14,7 +14,7 @@ from utils.general import image_resize
 import cv2
 import boto3
 import torch
-
+import subprocess
 
 
 
@@ -91,8 +91,8 @@ def cv2DestroyAllWindows():
             try:
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
-                print(obj.thr.subprocess.Popen.poll(obj.thr.p))
-                obj.thr.subprocess.Popen.terminate(obj.thr.p)                   
+                print(subprocess.Popen.poll(obj.thr.p))
+                subprocess.Popen.terminate(obj.thr.p)                   
                 LOGGER.info("close release objet {obj}")
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
