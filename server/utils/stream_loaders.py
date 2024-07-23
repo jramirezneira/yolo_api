@@ -22,9 +22,6 @@ from ultralytics.utils.checks import check_requirements
 
 from utils.general import image_resize
 import time
-from gi.repository import Gst, GstRtspServer, GObject
-
-
 
 @dataclass
 class SourceTypes:
