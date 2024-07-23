@@ -119,6 +119,7 @@ def status():
 @app.route('/api/start', methods=['GET'])
 @cross_origin()
 def start():
+    cv2DestroyAllWindows()
     url=request.args.get('url')
     response = {'message': setStatus('active')}
     thr = threading.Thread(target=service, args=([url]), kwargs={})
