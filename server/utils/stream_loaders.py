@@ -44,14 +44,8 @@ class LoadStreamNoThread:
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2
 
-        isNOtOpen=True
-        while isNOtOpen:
-            try:
-                self.cap = self.cv2.VideoCapture(source) 
-                isNOtOpen=False
-            except self.cv2.error:
-                time.sleep(0.5)
-
+       
+        self.cap=self.openStreamRtspServer(source)
                
         self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
         if not self.cap.isOpened():
@@ -80,6 +74,13 @@ class LoadStreamNoThread:
         for lin in result:
             if not lin.startswith('#'):
                 print(lin)
+
+    def openStreamRtspServer(self, source):
+        while True:
+            try:
+                return self.cv2.VideoCapture(source)                
+            except self.cv2.error:
+                time.sleep(0.5)
 
 
     # read frames as soon as they are available, keeping only most recent one
