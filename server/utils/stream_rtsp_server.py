@@ -20,6 +20,7 @@ from gi.repository import Gst, GstRtspServer, GObject
 # properties to it.
 class SensorFactory(GstRtspServer.RTSPMediaFactory):
     def __init__(self, **properties):
+        print("inicia SensorFactory")
         super(SensorFactory, self).__init__(**properties)		
         source = pafy.new( opt.device_id).getbest(preftype='mp4').url  
         self.cap = cv2.VideoCapture(source)
@@ -69,6 +70,7 @@ class SensorFactory(GstRtspServer.RTSPMediaFactory):
 # Rtsp server implementation where we attach the factory sensor with the stream uri
 class GstServer(GstRtspServer.RTSPServer):
     def __init__(self, **properties):
+        print("inicia GstServer")
         super(GstServer, self).__init__(**properties)
         self.factory = SensorFactory()
         self.factory.set_shared(True)
@@ -86,6 +88,9 @@ parser.add_argument("--image_height",  default=720, help="video frame height", t
 parser.add_argument("--port", default=8554, help="port to stream video", type = int)
 parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video stream uri")
 opt = parser.parse_args()
+
+
+print("inicia stream_rtsp_server")
 
 # try:
 #     opt.device_id = opt.device_id
