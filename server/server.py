@@ -84,6 +84,8 @@ def setStatus(status):
     return status
 
 def cv2DestroyAllWindows():    
+    cv2.destroyAllWindows()
+    setStatus("offline")
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
@@ -142,7 +144,6 @@ data_dict = {}
 # loop over until KeyBoard Interrupted
 
 def service(source, isVideo=True):    
-    cv2DestroyAllWindows()
     counter=[]
     region_points, stride =getConfPropertie("region_points", "stride")
     region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
@@ -191,7 +192,7 @@ def service(source, isVideo=True):
                     break
                 im0=image_resize(im0, height = 720)
                 dict_result=dict()
-                dict_result["verbose"] =True
+                dict_result["verbose"] =False
                 results = model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
 
                
