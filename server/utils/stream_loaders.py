@@ -76,12 +76,19 @@ class LoadStreamNoThread:
                 print(lin)
 
     def openStreamRtspServer(self, source):
+
         while True:
             try:
-                return self.cv2.VideoCapture(source)                
-            except:
-                print("error openStreamRtspServer")
-                time.sleep(0.5)
+                video=cv2.VideoCapture(source)
+                if video is None or not video.isOpened():
+                    raise ConnectionError
+                else:
+                    return video
+            except ConnectionError:
+                    print("Retrying connection to ",source," in ",str(0.5), " seconds...")
+                    time.sleep(0.5)
+
+       
 
 
     # read frames as soon as they are available, keeping only most recent one
