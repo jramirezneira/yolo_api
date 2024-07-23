@@ -24,6 +24,7 @@ from utils.general import image_resize
 import time
 import subprocess
 from subprocess import Popen
+import asyncio
 
 @dataclass
 class SourceTypes:
@@ -34,14 +35,15 @@ class SourceTypes:
 
 
 class LoadStreamNoThread:
-    def __init__(self, source):
+    async def __init__(self, source):
         self.cmd = 'python3 stream_rtsp_server.py'
         # self.p = None
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-            self.p = Popen(['python3', 'stream_rtsp_server.py']) 
+            # self.p = Popen(['python3', 'stream_rtsp_server.py']) 
+            self.proc = await asyncio.create_subprocess_exec('python3','-stream_rtsp_server.py',  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             
             
             # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
