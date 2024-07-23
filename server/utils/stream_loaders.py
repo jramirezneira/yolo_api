@@ -19,11 +19,11 @@ from ultralytics.data.augment import LetterBox
 from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
 from ultralytics.utils.checks import check_requirements
-
+import threading
 from utils.general import image_resize
 import time
 import subprocess
-cmd = 'python3 stream_rtsp_server.py'
+
 
 @dataclass
 class SourceTypes:
@@ -34,33 +34,21 @@ class SourceTypes:
 
 
 class LoadStreamNoThread:
-
     def __init__(self, source):
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-
-           
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-            out, err = p.communicate() 
-            result = out.split('\n')
-            for lin in result:
-                if not lin.startswith('#'):
-                    print(lin)
+            thr = threading.Thread(target=self.streamRtspServer, args=(), kwargs={})
+            thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
-
         self.cv2= cv2
-        self.cap = self.cv2.VideoCapture(source)
-        
+        self.cap = self.cv2.VideoCapture(source)        
         self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
-
-        # cv2.set(cv2.CAP_PROP_BUFFERSIZE, my_size)
         if not self.cap.isOpened():
                 raise ConnectionError(f'Failed to open')
         
-        (major_ver, minor_ver, subminor_ver) = (self.cv2.__version__).split('.')
- 
+        (major_ver, minor_ver, subminor_ver) = (self.cv2.__version__).split('.') 
         if int(major_ver)  < 3 :
             fps = self.cap.get(self.cv2.cv.CV_CAP_PROP_FPS)
             print ("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps))
@@ -75,7 +63,15 @@ class LoadStreamNoThread:
         # t = threading.Thread(target=self._reader)
         # t.daemon = True
         # t.start()
-    
+    def streamRtspServer(self):
+        cmd = 'python3 stream_rtsp_server.py'
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out, err = p.communicate() 
+        result = out.split('\n')
+        for lin in result:
+            if not lin.startswith('#'):
+                print(lin)
+
 
     # read frames as soon as they are available, keeping only most recent one
     def _reader(self):

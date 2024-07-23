@@ -1,6 +1,5 @@
 # import required libraries
 from vidgear.gears import NetGear
-import os
 import json
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS, cross_origin
@@ -35,24 +34,7 @@ names = {   0: 'person',  1: 'bicycle',  2: 'car',  3: 'motorcycle',  4: 'airpla
   64: 'mouse',  65: 'remote',  66: 'keyboard',  67: 'cell phone',  68: 'microwave',  69: 'oven',  70: 'toaster',  71: 'sink',
   72: 'refrigerator',  73: 'book',  74: 'clock',  75: 'vase',  76: 'scissors',  77: 'teddy bear',  78: 'hair drier',  79: 'toothbrush'}
 
-# region_points = [{    
-#                 "source":"https://www.youtube.com/watch?v=5_XSYlAfJZM",
-#                  "region_points":[[(800,600), (1280, 600), (1280, 0), (800,0)], [(0,300), (500, 300), (500, 720), (0,720)]],
-#                  "reg_counts":[[(800,600), (1000,700)], [(0,200),(200,300)]]                 
-#                  },
-#                  {    
-#                 "source":"https://www.youtube.com/watch?v=MNn9qKG2UFI",
-#                  "region_points":[[(800,600), (1280, 600), (1280, 0), (800,0)], [(0,300), (500, 300), (500, 720), (0,720)]],
-#                  "reg_counts":[[(800,600), (1000,700)], [(0,200),(200,300)]]                                  
-#                  },
-#                  {    
-#                 "source":"https://www.youtube.com/watch?v=PtChZ0D7tkE",
-#                  "region_points":[[(800,600), (1280, 600), (1280, 0), (800,0)], [(0,300), (500, 300), (500, 720), (0,720)]],
-#                  "reg_counts":[[(800,600), (1000,700)], [(0,200),(200,300)]]                                  
-#                  }]
 
-
-# reg_counts=[[(800,600), (1000,700)], [(0,200),(200,300)]]
 
 
 video, best, cap = None, None, None
