@@ -40,8 +40,8 @@ class LoadStreamNoThread:
     def __init__(self, source):
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
-            import pafy
-            source = pafy.new(source).getbest(preftype='mp4').url   
+            # import pafy
+            # source = pafy.new(source).getbest(preftype='mp4').url   
 
             GObject.threads_init()
 
