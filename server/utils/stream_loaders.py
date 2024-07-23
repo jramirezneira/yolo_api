@@ -39,14 +39,12 @@ class LoadStreamNoThread:
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-            thr = threading.Thread(target=self.streamRtspServer, args=(), kwargs={})
-            thr.start()  
+            self.thr = threading.Thread(target=self.streamRtspServer, args=(), kwargs={})
+            self.thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
-        self.cv2= cv2
+        self.cv2= cv2       
 
-       
-        self.cap=self.openStreamRtspServer(source)
-               
+        self.cap=self.openStreamRtspServer(source)               
         self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
         if not self.cap.isOpened():
                 raise ConnectionError(f'Failed to open')
@@ -58,14 +56,9 @@ class LoadStreamNoThread:
         else :
             fps = self.cap.get(self.cv2.CAP_PROP_FPS)
             print ("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
-    
-        
-        # self.cap.set(cv2.CV_CAP_PROP_BUFFERSIZE,1)
+
         return None
-        # self.q = queue.Queue()
-        # t = threading.Thread(target=self._reader)
-        # t.daemon = True
-        # t.start()
+    
     def streamRtspServer(self):
         cmd = 'python3 stream_rtsp_server.py'
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
@@ -76,7 +69,6 @@ class LoadStreamNoThread:
                 print(lin)
 
     def openStreamRtspServer(self, source):
-
         while True:
             try:
                 video=cv2.VideoCapture(source)
