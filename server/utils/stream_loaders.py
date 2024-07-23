@@ -79,7 +79,8 @@ class LoadStreamNoThread:
         while True:
             try:
                 return self.cv2.VideoCapture(source)                
-            except self.cv2.error:
+            except:
+                print("error openStreamRtspServer")
                 time.sleep(0.5)
 
 
