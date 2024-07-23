@@ -20,7 +20,6 @@ from gi.repository import Gst, GstRtspServer, GObject
 # properties to it.
 class SensorFactory(GstRtspServer.RTSPMediaFactory):
     def __init__(self, **properties):
-        print("inicia SensorFactory")
         super(SensorFactory, self).__init__(**properties)		
         source = pafy.new( opt.device_id).getbest(preftype='mp4').url  
         self.cap = cv2.VideoCapture(source)
@@ -70,17 +69,12 @@ class SensorFactory(GstRtspServer.RTSPMediaFactory):
 # Rtsp server implementation where we attach the factory sensor with the stream uri
 class GstServer(GstRtspServer.RTSPServer):
     def __init__(self, **properties):
-        print("inicia GstServer")
-        GObject.threads_init()
-        Gst.init(None)
         super(GstServer, self).__init__(**properties)
         self.factory = SensorFactory()
         self.factory.set_shared(True)
         self.set_service(str(opt.port))
         self.get_mount_points().add_factory(opt.stream_uri, self.factory)
         self.attach(None)
-        loop = GObject.MainLoop()
-        loop.run()
 
 # getting the required information from the user 
 parser = argparse.ArgumentParser()
@@ -93,18 +87,16 @@ parser.add_argument("--port", default=8554, help="port to stream video", type = 
 parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video stream uri")
 opt = parser.parse_args()
 
+try:
+    opt.device_id = opt.device_id
+except ValueError:
+    pass
 
-print("inicia stream_rtsp_server")
+# initializing the threads and running the stream on loop.
+GObject.threads_init()
 
-# try:
-#     opt.device_id = opt.device_id
-# except ValueError:
-#     pass
+Gst.init(None)
 
-# # initializing the threads and running the stream on loop.
-# GObject.threads_init()
-
-# Gst.init(None)
-# server = GstServer()
-# loop = GObject.MainLoop()
-# loop.run()
+server = GstServer()
+loop = GObject.MainLoop()
+loop.run()

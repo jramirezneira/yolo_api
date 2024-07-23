@@ -23,7 +23,6 @@ from ultralytics.utils.checks import check_requirements
 from utils.general import image_resize
 import time
 from gi.repository import Gst, GstRtspServer, GObject
-from utils.stream_rtsp_server import GstServer
 
 
 
@@ -44,7 +43,7 @@ class LoadStreamNoThread:
             # source = pafy.new(source).getbest(preftype='mp4').url   
 
            
-            server = GstServer()
+            os.system("stream_rtsp_server.py 1")
             source="rtsp://127.0.0.1:8554/video_stream"
 
         self.cv2= cv2
