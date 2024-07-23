@@ -90,8 +90,7 @@ def cv2DestroyAllWindows():
         if isinstance(obj, LoadStreamNoThread):
             try:
                 obj.cap.release()    
-                obj.cv2.destroyAllWindows()   
-                obj.thr.join()                      
+                obj.cv2.destroyAllWindows()       
                 LOGGER.info("close release objet {obj}")
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
