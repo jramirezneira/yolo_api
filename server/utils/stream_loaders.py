@@ -22,6 +22,8 @@ from ultralytics.utils.checks import check_requirements
 
 from utils.general import image_resize
 import time
+import subprocess
+cmd = 'python3 stream_rtsp_server.py'
 
 @dataclass
 class SourceTypes:
@@ -40,7 +42,12 @@ class LoadStreamNoThread:
             # source = pafy.new(source).getbest(preftype='mp4').url   
 
            
-            os.system("stream_rtsp_server.py 1")
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+            out, err = p.communicate() 
+            result = out.split('\n')
+            for lin in result:
+                if not lin.startswith('#'):
+                    print(lin)
             source="rtsp://127.0.0.1:8554/video_stream"
 
         self.cv2= cv2
