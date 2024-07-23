@@ -23,7 +23,7 @@ from ultralytics.utils.checks import check_requirements
 from utils.general import image_resize
 import time
 from gi.repository import Gst, GstRtspServer, GObject
-from stream_rtsp_server import GstServer
+from utils.stream_rtsp_server import GstServer
 
 
 
