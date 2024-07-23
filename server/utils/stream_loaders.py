@@ -23,7 +23,7 @@ import threading
 from utils.general import image_resize
 import time
 import subprocess
-
+from subprocess import Popen
 
 @dataclass
 class SourceTypes:
@@ -41,10 +41,10 @@ class LoadStreamNoThread:
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-
+            self.p = Popen(['python3', 'stream_rtsp_server.py']) 
             
             
-            self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
+            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             self.thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
