@@ -43,12 +43,8 @@ class LoadStreamNoThread:
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
 
-            GObject.threads_init()
-
-            Gst.init(None)
+           
             server = GstServer()
-            loop = GObject.MainLoop()
-            loop.run()
             source="rtsp://127.0.0.1:8554/video_stream"
 
         self.cv2= cv2

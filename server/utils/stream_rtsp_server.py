@@ -71,12 +71,16 @@ class SensorFactory(GstRtspServer.RTSPMediaFactory):
 class GstServer(GstRtspServer.RTSPServer):
     def __init__(self, **properties):
         print("inicia GstServer")
+        GObject.threads_init()
+        Gst.init(None)
         super(GstServer, self).__init__(**properties)
         self.factory = SensorFactory()
         self.factory.set_shared(True)
         self.set_service(str(opt.port))
         self.get_mount_points().add_factory(opt.stream_uri, self.factory)
         self.attach(None)
+        loop = GObject.MainLoop()
+        loop.run()
 
 # getting the required information from the user 
 parser = argparse.ArgumentParser()
