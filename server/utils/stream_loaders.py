@@ -41,7 +41,7 @@ class LoadStreamNoThread:
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             status = subprocess.Popen.poll(self.cmd) 
-            print("status process {0}".format(str(status)))
+            print(status)
 
             if status is not None:
                 self.stopStreamRtspServer()
