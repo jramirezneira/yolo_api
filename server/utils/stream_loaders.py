@@ -44,7 +44,8 @@ class LoadStreamNoThread:
             # source = pafy.new(source).getbest(preftype='mp4').url   
             # self.p = Popen(['python3', 'stream_rtsp_server.py']) 
              
-            self.startStreamRtspServer()
+          
+            asyncio.run(self.startStreamRtspServer('python3 stream_rtsp_server.py'))
             
             # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             self.thr.start()  
@@ -66,8 +67,20 @@ class LoadStreamNoThread:
 
         return None
     
-    async def startStreamRtspServer(self):
-        self.proc = await asyncio.create_subprocess_exec('python3','-stream_rtsp_server.py',  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    async def startStreamRtspServer(self, cmd):
+        self.proc = await asyncio.create_subprocess_shell(
+        'python3 stream_rtsp_server.py',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+        stdout, stderr = await self.proc.communicate()
+
+        print(f'[{cmd!r} exited with {self.proc.returncode}]')
+        if stdout:
+            print(f'[stdout]\n{stdout.decode()}')
+        if stderr:
+            print(f'[stderr]\n{stderr.decode()}')
+        # self.proc = await asyncio.create_subprocess_exec('python3','stream_rtsp_server.py',  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         # p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True)
         # out, err = p.communicate() 
         # result = out.split('\n')
