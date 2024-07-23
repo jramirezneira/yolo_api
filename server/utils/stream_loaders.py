@@ -40,8 +40,6 @@ class LoadStreamNoThread:
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-            status = subprocess.Popen.poll(self.cmd) 
-            print(status)
 
             if status is not None:
                 self.stopStreamRtspServer()

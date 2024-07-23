@@ -91,6 +91,7 @@ def cv2DestroyAllWindows():
             try:
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
+                print(obj.thr.subprocess.Popen.poll(obj.thr.p))
                 obj.thr.subprocess.Popen.terminate(obj.thr.p)                   
                 LOGGER.info("close release objet {obj}")
             except Exception as e:
