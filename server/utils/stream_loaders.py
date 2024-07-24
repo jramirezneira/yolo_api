@@ -36,7 +36,6 @@ class SourceTypes:
 
 class LoadStreamNoThread:
     def __init__(self, source):
-        print("pasa 3")
         self.cmd = 'python3 stream_rtsp_server.py'
         self.proc = None
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
@@ -44,10 +43,8 @@ class LoadStreamNoThread:
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
-            print("pasa 1")
-            thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
-            thr.start()  
-            print("pasa 2")
+            self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
+            self.thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
 
@@ -67,12 +64,12 @@ class LoadStreamNoThread:
         return None
     
     def startStreamRtspServer(self):        
-        self.proc = subprocess.Popen(["python3", "stream_rtsp_server.py"])
-        # out, err = self.proc.communicate() 
-        # result = out.split('\n')
-        # for lin in result:
-        #     if not lin.startswith('#'):
-        #         print(lin)
+        self.proc = subprocess.Popen("python3 stream_rtsp_server.py", stdout=subprocess.PIPE, shell=True)
+        out, err = self.proc.communicate() 
+        result = out.split('\n')
+        for lin in result:
+            if not lin.startswith('#'):
+                print(lin)
 
     # def stopStreamRtspServer(self):
     #     subprocess.Popen.terminate(self.cmd)
