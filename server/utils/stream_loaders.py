@@ -46,8 +46,8 @@ class LoadStreamNoThread:
             cmd="python3 stream_rtsp_server.py"
             # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             # self.thr.start()  
-            proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
-            proc.start()
+            self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
+            self.proc.start()
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
 
