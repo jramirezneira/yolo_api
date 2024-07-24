@@ -101,7 +101,7 @@ def cv2DestroyAllWindows():
         if isinstance(obj, Popen):
             try:
                 subprocess.Popen.poll(obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj.pid))
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
                 os.kill(obj.pid, signal.SIGKILL)
                 subprocess.Popen.kill(obj)
                 LOGGER.info("Popen %s " % obj)
