@@ -139,10 +139,10 @@ def start():
     url=request.args.get('url')
     response = {'message': setStatus('active')}
     print("pasa 6  %s" % url) 
-    # thrs = threading.Thread(target=service, args=([url]), kwargs={})
-    # thrs.start()    
-    proc = multiprocessing.Process(target=service, args=([url]))
-    proc.start()
+    thrs = threading.Thread(target=service, args=([url]), kwargs={})
+    thrs.start()    
+    # proc = multiprocessing.Process(target=service, args=([url]))
+    # proc.start()
     return jsonify(response)
 
 
