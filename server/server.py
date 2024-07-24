@@ -137,8 +137,9 @@ def start():
     cv2DestroyAllWindows()
     url=request.args.get('url')
     response = {'message': setStatus('active')}
-    thr = threading.Thread(target=service, args=([url]), kwargs={})
-    thr.start()    
+    print("pasa 6  %s" % url) 
+    thrs = threading.Thread(target=service, args=([url]), kwargs={})
+    thrs.start()    
     return jsonify(response)
 
 
@@ -170,7 +171,7 @@ def service(source, isVideo=True):
                     reg_counts=region_points_dict["reg_counts"][i]
                     )
         counter.append(ctr)
-    
+    print("pasa 5") 
     if isVideo:
         # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
         print("pasa 4")   
