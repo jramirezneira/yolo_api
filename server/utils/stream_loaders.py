@@ -36,6 +36,7 @@ class SourceTypes:
 
 class LoadStreamNoThread:
     def __init__(self, source):
+        print("pasa 3")
         self.cmd = 'python3 stream_rtsp_server.py'
         self.proc = None
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
