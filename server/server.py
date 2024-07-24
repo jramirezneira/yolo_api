@@ -15,6 +15,7 @@ import cv2
 import boto3
 import torch
 import subprocess
+from subprocess import Popen
 
 
 
@@ -87,13 +88,19 @@ def cv2DestroyAllWindows():
     cv2.destroyAllWindows()
     setStatus("offline")
     for obj in gc.get_objects():
-        print(obj)
         if isinstance(obj, LoadStreamNoThread):
             try:
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
                 obj.proc.terminate()                  
                 LOGGER.info("close release object %s " % obj)
+            except Exception as e:
+                LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
+
+        if isinstance(obj, Popen):
+            try:
+                  
+                LOGGER.info("Popen %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
 
