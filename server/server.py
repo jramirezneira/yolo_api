@@ -16,6 +16,7 @@ import boto3
 import torch
 import subprocess
 from subprocess import Popen
+import os, signal
 
 
 
@@ -100,7 +101,8 @@ def cv2DestroyAllWindows():
         if isinstance(obj, Popen):
             try:
                 subprocess.Popen.poll(obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj.pid))
+                os.kill(obj.pid, signal.SIGKILL)
                 subprocess.Popen.kill(obj)
                 LOGGER.info("Popen %s " % obj)
                 LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
