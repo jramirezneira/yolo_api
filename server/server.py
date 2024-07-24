@@ -17,6 +17,7 @@ import torch
 import subprocess
 from subprocess import Popen
 import os, signal
+import multiprocessing
 
 
 
@@ -94,7 +95,6 @@ def cv2DestroyAllWindows():
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
                 obj.proc.terminate()  
-                obj.thr.join()                
                 LOGGER.info("close release object %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
@@ -139,8 +139,10 @@ def start():
     url=request.args.get('url')
     response = {'message': setStatus('active')}
     print("pasa 6  %s" % url) 
-    thrs = threading.Thread(target=service, args=([url]), kwargs={})
-    thrs.start()    
+    # thrs = threading.Thread(target=service, args=([url]), kwargs={})
+    # thrs.start()    
+    proc = multiprocessing.Process(target=service, args=(url))
+    proc.start()
     return jsonify(response)
 
 
