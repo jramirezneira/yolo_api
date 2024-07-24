@@ -172,7 +172,8 @@ def service(source, isVideo=True):
         counter.append(ctr)
     
     if isVideo:
-        # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)        
+        # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
+        print("pasa 4")   
         try:
             ldst = LoadStreamNoThread(source)
             # cap = cv2.VideoCapture(source)
