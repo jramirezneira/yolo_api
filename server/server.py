@@ -157,7 +157,7 @@ data_dict = {}
 
 # loop over until KeyBoard Interrupted
 
-def service(source, isVideo=True):    
+def service(source):    
     counter=[]
     region_points, stride =getConfPropertie("region_points", "stride")
     region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
@@ -172,20 +172,20 @@ def service(source, isVideo=True):
                     )
         counter.append(ctr)
     print("pasa 5") 
-    if isVideo:
+    
         # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
-        print("pasa 4")   
-        try:
-            ldst = LoadStreamNoThread(source)
-            # cap = cv2.VideoCapture(source)
-            cap = ldst.getCap()            
-        except Exception as e:
-            setStatus("offline")
-            cv2DestroyAllWindows()
-            LOGGER.error("An exception occurred to open cap.release : %s" % e)
-            return
-    else:
-        dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
+    print("pasa 4")   
+    try:
+        ldst = LoadStreamNoThread(source)
+        # cap = cv2.VideoCapture(source)
+        cap = ldst.getCap()            
+    except Exception as e:
+        setStatus("offline")
+        cv2DestroyAllWindows()
+        LOGGER.error("An exception occurred to open cap.release : %s" % e)
+        return
+    # else:
+    #     dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
 
     # for frame_idx, batch in enumerate(dataset):
         # 
