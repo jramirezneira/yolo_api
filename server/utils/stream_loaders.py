@@ -42,13 +42,9 @@ class LoadStreamNoThread:
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-            # self.p = Popen(['python3', 'stream_rtsp_server.py']) 
-             
           
-            asyncio.run(self.startStreamRtspServer('python3 stream_rtsp_server.py'))
-            
-            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
-            # self.thr.start()  
+            self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
+            self.thr.start()  
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
 
@@ -67,26 +63,13 @@ class LoadStreamNoThread:
 
         return None
     
-    async def startStreamRtspServer(self, cmd):
-        self.proc = await asyncio.create_subprocess_shell(
-        'python3 stream_rtsp_server.py',
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
-
-        stdout, stderr = await self.proc.communicate()
-
-        print(f'[{cmd!r} exited with {self.proc.returncode}]')
-        if stdout:
-            print(f'[stdout]\n{stdout.decode()}')
-        if stderr:
-            print(f'[stderr]\n{stderr.decode()}')
-        # self.proc = await asyncio.create_subprocess_exec('python3','stream_rtsp_server.py',  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        # p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True)
-        # out, err = p.communicate() 
-        # result = out.split('\n')
-        # for lin in result:
-        #     if not lin.startswith('#'):
-        #         print(lin)
+    def startStreamRtspServer(self, cmd):        
+        self.proc = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True)
+        out, err = self.proc.communicate() 
+        result = out.split('\n')
+        for lin in result:
+            if not lin.startswith('#'):
+                print(lin)
 
     # def stopStreamRtspServer(self):
     #     subprocess.Popen.terminate(self.cmd)
