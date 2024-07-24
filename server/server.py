@@ -87,12 +87,13 @@ def cv2DestroyAllWindows():
     cv2.destroyAllWindows()
     setStatus("offline")
     for obj in gc.get_objects():
+        print(obj)
         if isinstance(obj, LoadStreamNoThread):
             try:
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
                 obj.proc.terminate()                  
-                LOGGER.info("close release objet {obj}")
+                LOGGER.info("close release object %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
 
