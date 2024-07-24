@@ -99,10 +99,10 @@ def cv2DestroyAllWindows():
 
         if isinstance(obj, Popen):
             try:
-                  
+                subprocess.Popen.terminate(obj)
                 LOGGER.info("Popen %s " % obj)
             except Exception as e:
-                LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
+                LOGGER.error("An exception occurred in subprocess.Popen.terminate : %s" % e)
 
 
 
