@@ -167,7 +167,8 @@ class LoadStreamNoThread:
         region_points, stride =getConfPropertie("region_points", "stride")
         region_points_dict = [x for x in region_points if x['source'] == self.source and x['available'] == 1][0]
         print("pasa 13")
-
+        print(enumerate(region_points_dict["region_points"]))
+        print(object_counter.ObjectCounter())
         for i, rp in enumerate(region_points_dict["region_points"]):
             print("pasa i")
             ctr= object_counter.ObjectCounter()
