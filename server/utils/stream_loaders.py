@@ -66,6 +66,7 @@ class LoadStreamNoThread:
         print("pasa 13")
 
         for i, rp in enumerate(region_points_dict["region_points"]):
+            print("pasa i")
             ctr= object_counter.ObjectCounter()
             ctr.set_args(view_img=False,
                         reg_pts=rp,
