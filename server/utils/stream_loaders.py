@@ -194,7 +194,7 @@ class LoadStreamNoThread:
                     ret, im0 = self.cap.retrieve()
                     if not ret:
                         break
-                    im0=image_resize(im0, height = 720)
+                    # im0=image_resize(im0, height = 720)
                     dict_result=dict()
                     dict_result["verbose"] =False
                     results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
