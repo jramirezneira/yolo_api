@@ -155,7 +155,7 @@ class LoadStreamNoThread:
         # self.thrP = threading.Thread(target=self.service, args=( [server]), kwargs={})
         # self.thrP.start()  
 
-        self.procP = multiprocessing.Process(target=self.startStreamRtspServer, args=( [server]))
+        self.procP = multiprocessing.Process(target=self.service, args=( [server]))
         self.procP.start()
 
 
