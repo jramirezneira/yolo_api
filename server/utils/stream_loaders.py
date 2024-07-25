@@ -52,7 +52,7 @@ class LoadStreamNoThread:
             72: 'refrigerator',  73: 'book',  74: 'clock',  75: 'vase',  76: 'scissors',  77: 'teddy bear',  78: 'hair drier',  79: 'toothbrush'}
 
 
-
+        print("pasa 11")
 
         self.cmd = 'python3 stream_rtsp_server.py'
         self.thrP = None
@@ -81,8 +81,10 @@ class LoadStreamNoThread:
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
+            print("pasa 12")
             self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             self.thr.start()  
+            print("pasa 13")
             # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
             # self.proc.start()
             source="rtsp://127.0.0.1:8554/video_stream"

@@ -136,7 +136,7 @@ def status():
 @app.route('/api/start', methods=['GET'])
 @cross_origin()
 def start():
-    # cv2DestroyAllWindows()
+    cv2DestroyAllWindows()
     url=request.args.get('url')
     response = {'message': setStatus('active')}
     print("pasa 6  %s" % url) 
@@ -167,7 +167,7 @@ def start():
 @cross_origin()
 def stop():    
     print("pasa 7") 
-    # cv2DestroyAllWindows()
+    cv2DestroyAllWindows()
     response = {'message': setStatus('offline')}
 
     print("pasa 8") 
