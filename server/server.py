@@ -94,22 +94,22 @@ def cv2DestroyAllWindows():
             try:
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
-                obj.thr.join()
-                obj.thrP.join()
+                # obj.thr.join()
+                # obj.thrP.join()
                 LOGGER.info("close release object %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
 
-        # if isinstance(obj, Popen):
-        #     try:
-        #         subprocess.Popen.poll(obj)
-        #         LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-        #         os.kill(obj.pid, signal.SIGKILL)
-        #         subprocess.Popen.kill(obj)
-        #         LOGGER.info("Popen %s " % obj)
-        #         LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-        #     except Exception as e:
-        #         LOGGER.error("An exception occurred in subprocess.Popen.terminate : %s" % e)
+        if isinstance(obj, Popen):
+            try:
+                subprocess.Popen.poll(obj)
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+                os.kill(obj.pid, signal.SIGKILL)
+                subprocess.Popen.kill(obj)
+                LOGGER.info("Popen %s " % obj)
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+            except Exception as e:
+                LOGGER.error("An exception occurred in subprocess.Popen.terminate : %s" % e)
 
 
 
