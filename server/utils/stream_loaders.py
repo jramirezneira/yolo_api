@@ -190,7 +190,7 @@ class LoadStreamNoThread:
                 if not success: break                      
                 
                 results=None
-                if n % self.stride== 0:
+                if n % 7== 0:
                     ret, im0 = self.cap.retrieve()
                     if not ret:
                         break
