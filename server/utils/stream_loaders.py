@@ -20,12 +20,15 @@ from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
 from ultralytics.utils.checks import check_requirements
 import threading
-from utils.general import image_resize
+from utils.general import image_resize, getConfPropertie, setStatus
 import time
 import subprocess
 from subprocess import Popen
 import asyncio
 import multiprocessing
+from ultralytics import YOLO
+from ultralytics.solutions import object_counter
+
 
 @dataclass
 class SourceTypes:
@@ -38,16 +41,36 @@ class SourceTypes:
 class LoadStreamNoThread:
     def __init__(self, source):
         self.cmd = 'python3 stream_rtsp_server.py'
-        self.proc = None
+        self.thrP = None
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model = YOLO("yolov8n.pt").to(self.device)
+
+        self.counter=[]
+        region_points, self.stride =getConfPropertie("region_points", "stride")
+        region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
+
+        for i, rp in enumerate(region_points_dict["region_points"]):
+            ctr= object_counter.ObjectCounter()
+            ctr.set_args(view_img=False,
+                        reg_pts=rp,
+                        classes_names=names,
+                        draw_tracks=True,
+                        reg_counts=region_points_dict["reg_counts"][i]
+                        )
+            self.counter.append(ctr)
+
+
+
+
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             check_requirements(('pafy', 'youtube_dl==2020.12.2'))
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
-            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
-            # self.thr.start()  
-            self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
-            self.proc.start()
+            self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
+            self.thr.start()  
+            # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
+            # self.proc.start()
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
 
@@ -92,27 +115,31 @@ class LoadStreamNoThread:
        
 
 
-    # read frames as soon as they are available, keeping only most recent one
-    def _reader(self):
-        while self.cap.isOpened:
-            time.sleep(0.01)
+    # # read frames as soon as they are available, keeping only most recent one
+    # def _reader(self):
+    #     while self.cap.isOpened:
+    #         time.sleep(0.01)
            
-            if(self.q.qsize()<=300): 
-                self.cap.grab() 
-                ret, frame = self.cap.retrieve()
-                if not ret:
-                    break
-                frame=image_resize(frame, height = 720)
-                print(self.q.qsize())
-                # if not self.q.empty():
-                #     try:
-                #         self.q.get()   # discard previous (unprocessed) frame
-                #     except queue.Empty:
-                #         pass
-                self.q.put(frame)
+    #         if(self.q.qsize()<=300): 
+    #             self.cap.grab() 
+    #             ret, frame = self.cap.retrieve()
+    #             if not ret:
+    #                 break
+    #             frame=image_resize(frame, height = 720)
+    #             print(self.q.qsize())
+    #             # if not self.q.empty():
+    #             #     try:
+    #             #         self.q.get()   # discard previous (unprocessed) frame
+    #             #     except queue.Empty:
+    #             #         pass
+    #             self.q.put(frame)
 
     def read(self):
         return self.q.get()
+    
+    def startPrediction(self, server):
+        self.thrP = threading.Thread(target=self.startStreamRtspServer, args=( [server]), kwargs={})
+        self.thrP.start()  
 
 
         # import pafy  # noqa
@@ -124,6 +151,45 @@ class LoadStreamNoThread:
     def getCap(self):
         print("pasa 0")
         return self.cap
+    
+    def service(self, server):    
+       
+    
+        n=0
+        while self.cap.isOpened:        
+            try:
+                time.sleep(0.00000001)
+                n += 1        
+            
+                # cap.read()
+                # cap.set(cv2.CAP_PROP_FPS,25) 
+                success = self.cap.grab() 
+                if not success: break                      
+                
+                results=None
+                if n % self.stride== 0:
+                    ret, im0 = self.cap.retrieve()
+                    if not ret:
+                        break
+                    im0=image_resize(im0, height = 720)
+                    dict_result=dict()
+                    dict_result["verbose"] =False
+                    results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
+
+                
+                    for ctr in self.counter:
+                        im0 = ctr.start_counting(im0, results)  
+                # if isStreaming:
+                    server.send(im0)        
+                    # else:
+                    #     yield (b'--frame\r\n'
+                    #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
+            except Exception as e:
+                LOGGER.error("Error in while read : %s" % e)
+                continue
+
+        cv2.destroyAllWindows()
+        setStatus("offline")
 
 
 class LoadStreams:

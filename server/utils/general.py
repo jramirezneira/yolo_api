@@ -10,11 +10,30 @@ import os
 from pathlib import Path
 import cv2
 import json # Henry
+import boto3
 
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv8API root directory
 RANK = int(os.getenv('RANK', -1))
+
+s3_client = boto3.client('s3')
+def getAppConf():    
+    return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
+
+def getConfPropertie(propertie1, propertie2=None):
+    appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
+    return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
+
+def setStatus(status):    
+    # with open("app.conf",  "r") as json_data_file:
+    s3Object=getAppConf()
+    data = json.loads(s3Object["Body"].read().decode("utf-8"))
+    data["statusServer"] = status
+    s3_client.put_object(        
+        Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='variosjavierramirez', Key='app.json'
+        )   
+    return status
 
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and

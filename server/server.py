@@ -10,7 +10,7 @@ from ultralytics import YOLO
 from ultralytics.solutions import object_counter
 from utils.stream_loaders import LoadImages, LoadStreamNoThread
 import time
-from utils.general import image_resize
+from utils.general import image_resize, getConfPropertie, setStatus
 import cv2
 import boto3
 import torch
@@ -51,14 +51,14 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-s3_client = boto3.client('s3')
-def getAppConf():    
-    return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
+# s3_client = boto3.client('s3')
+# def getAppConf():    
+#     return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
 
 
-def getConfPropertie(propertie1, propertie2=None):
-    appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
-    return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
+# def getConfPropertie(propertie1, propertie2=None):
+#     appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
+#     return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
 
 ipclient, _=getConfPropertie("ipclient")
 
@@ -76,15 +76,15 @@ LOGGER.info("Running in ip adress : %s" % ipclient)
 # device: str = "mps" if torch.backends.mps.is_available() else "cpu"
 
 
-def setStatus(status):    
-    # with open("app.conf",  "r") as json_data_file:
-    s3Object=getAppConf()
-    data = json.loads(s3Object["Body"].read().decode("utf-8"))
-    data["statusServer"] = status
-    s3_client.put_object(        
-        Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='variosjavierramirez', Key='app.json'
-        )   
-    return status
+# def setStatus(status):    
+#     # with open("app.conf",  "r") as json_data_file:
+#     s3Object=getAppConf()
+#     data = json.loads(s3Object["Body"].read().decode("utf-8"))
+#     data["statusServer"] = status
+#     s3_client.put_object(        
+#         Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='variosjavierramirez', Key='app.json'
+#         )   
+#     return status
 
 def cv2DestroyAllWindows():    
     cv2.destroyAllWindows()
@@ -139,8 +139,24 @@ def start():
     url=request.args.get('url')
     response = {'message': setStatus('active')}
     print("pasa 6  %s" % url) 
-    thrs = threading.Thread(target=service, args=([url]), kwargs={})
-    thrs.start()    
+  
+    print("pasa 5") 
+    
+        # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
+    print("pasa 4")   
+
+
+    try:
+        ldst = LoadStreamNoThread(url)
+        ldst.startPrediction()
+        # cap = cv2.VideoCapture(source)
+        # cap = ldst.getCap()            
+    except Exception as e:
+        setStatus("offline")
+        cv2DestroyAllWindows()
+        LOGGER.error("An exception occurred to open cap.release : %s" % e)
+    # thrs = threading.Thread(target=service, args=([url]), kwargs={})
+    # thrs.start()    
     # proc = multiprocessing.Process(target=service, args=([url]))
     # proc.start()
     return jsonify(response)
@@ -160,84 +176,84 @@ data_dict = {}
 
 # loop over until KeyBoard Interrupted
 
-def service(source):    
-    counter=[]
-    region_points, stride =getConfPropertie("region_points", "stride")
-    region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
+# def service(source):    
+#     counter=[]
+#     region_points, stride =getConfPropertie("region_points", "stride")
+#     region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
 
-    for i, rp in enumerate(region_points_dict["region_points"]):
-        ctr= object_counter.ObjectCounter()
-        ctr.set_args(view_img=False,
-                    reg_pts=rp,
-                    classes_names=names,
-                    draw_tracks=True,
-                    reg_counts=region_points_dict["reg_counts"][i]
-                    )
-        counter.append(ctr)
-    print("pasa 5") 
+#     for i, rp in enumerate(region_points_dict["region_points"]):
+#         ctr= object_counter.ObjectCounter()
+#         ctr.set_args(view_img=False,
+#                     reg_pts=rp,
+#                     classes_names=names,
+#                     draw_tracks=True,
+#                     reg_counts=region_points_dict["reg_counts"][i]
+#                     )
+#         counter.append(ctr)
+#     print("pasa 5") 
     
-        # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
-    print("pasa 4")   
-    try:
-        ldst = LoadStreamNoThread(source)
-        # cap = cv2.VideoCapture(source)
-        cap = ldst.getCap()            
-    except Exception as e:
-        setStatus("offline")
-        cv2DestroyAllWindows()
-        LOGGER.error("An exception occurred to open cap.release : %s" % e)
-        return
-    # else:
-    #     dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
+#         # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
+#     print("pasa 4")   
+#     try:
+#         ldst = LoadStreamNoThread(source)
+#         # cap = cv2.VideoCapture(source)
+#         cap = ldst.getCap()            
+#     except Exception as e:
+#         setStatus("offline")
+#         cv2DestroyAllWindows()
+#         LOGGER.error("An exception occurred to open cap.release : %s" % e)
+#         return
+#     # else:
+#     #     dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
 
-    # for frame_idx, batch in enumerate(dataset):
-        # 
-    n=0
-    while cap.isOpened:        
-        try:
-            time.sleep(0.00000001)
-            n += 1        
+#     # for frame_idx, batch in enumerate(dataset):
+#         # 
+#     n=0
+#     while cap.isOpened:        
+#         try:
+#             time.sleep(0.00000001)
+#             n += 1        
            
-            # cap.read()
-            # cap.set(cv2.CAP_PROP_FPS,25) 
-            success = cap.grab() 
-            if not success: break                      
+#             # cap.read()
+#             # cap.set(cv2.CAP_PROP_FPS,25) 
+#             success = cap.grab() 
+#             if not success: break                      
             
-            results=None
-            if n % stride== 0:
-                ret, im0 = cap.retrieve()
-                if not ret:
-                    break
-                im0=image_resize(im0, height = 720)
-                dict_result=dict()
-                dict_result["verbose"] =False
-                results = model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
+#             results=None
+#             if n % stride== 0:
+#                 ret, im0 = cap.retrieve()
+#                 if not ret:
+#                     break
+#                 im0=image_resize(im0, height = 720)
+#                 dict_result=dict()
+#                 dict_result["verbose"] =False
+#                 results = model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
 
                
-                for ctr in counter:
-                    im0 = ctr.start_counting(im0, results)  
-            # if isStreaming:
-                server.send(im0)        
-                # else:
-                #     yield (b'--frame\r\n'
-                #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
-        except Exception as e:
-            LOGGER.error("Error in while read : %s" % e)
-            continue
+#                 for ctr in counter:
+#                     im0 = ctr.start_counting(im0, results)  
+#             # if isStreaming:
+#                 server.send(im0)        
+#                 # else:
+#                 #     yield (b'--frame\r\n'
+#                 #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
+#         except Exception as e:
+#             LOGGER.error("Error in while read : %s" % e)
+#             continue
 
-    cv2.destroyAllWindows()
-    setStatus("offline")
+#     cv2.destroyAllWindows()
+#     setStatus("offline")
       
 
     # safely close video stream
     
 
 
-@app.route('/detect',methods = ['POST', 'GET'])
-def video_feed():
-    """Video streaming home page."""
-    source = request.args.get('url')    
-    return Response(service(source, True, False), mimetype='multipart/x-mixed-replace; boundary=frame')
+# @app.route('/detect',methods = ['POST', 'GET'])
+# def video_feed():
+#     """Video streaming home page."""
+#     source = request.args.get('url')    
+#     return Response(service(source, True, False), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == '__main__':
