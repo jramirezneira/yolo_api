@@ -60,21 +60,21 @@ class LoadStreamNoThread:
         self.model = YOLO("yolov8n.pt").to(self.device)
         print("pasa 12")
 
-        self.counter=[]
-        region_points, self.stride =getConfPropertie("region_points", "stride")
-        region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
-        print("pasa 13")
+        # self.counter=[]
+        # region_points, self.stride =getConfPropertie("region_points", "stride")
+        # region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
+        # print("pasa 13")
 
-        for i, rp in enumerate(region_points_dict["region_points"]):
-            print("pasa i")
-            ctr= object_counter.ObjectCounter()
-            ctr.set_args(view_img=False,
-                        reg_pts=rp,
-                        classes_names=names,
-                        draw_tracks=True,
-                        reg_counts=region_points_dict["reg_counts"][i]
-                        )
-            self.counter.append(ctr)
+        # for i, rp in enumerate(region_points_dict["region_points"]):
+        #     print("pasa i")
+        #     ctr= object_counter.ObjectCounter()
+        #     ctr.set_args(view_img=False,
+        #                 reg_pts=rp,
+        #                 classes_names=names,
+        #                 draw_tracks=True,
+        #                 reg_counts=region_points_dict["reg_counts"][i]
+        #                 )
+        #     self.counter.append(ctr)
 
 
         print(source)
@@ -200,8 +200,8 @@ class LoadStreamNoThread:
                     results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
 
                 
-                    for ctr in self.counter:
-                        im0 = ctr.start_counting(im0, results)  
+                    # for ctr in self.counter:
+                    #     im0 = ctr.start_counting(im0, results)  
                 # if isStreaming:
                     server.send(im0)        
                     # else:
