@@ -95,6 +95,7 @@ def cv2DestroyAllWindows():
                 obj.cap.release()    
                 obj.cv2.destroyAllWindows()   
                 obj.proc.kill()
+                obj.procP.kill()
                 LOGGER.info("close release object %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)

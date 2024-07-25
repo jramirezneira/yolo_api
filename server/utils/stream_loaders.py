@@ -81,10 +81,10 @@ class LoadStreamNoThread:
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
-            self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
-            self.thr.start()  
-            # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
-            # self.proc.start()
+            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
+            # self.thr.start()  
+            self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
+            self.proc.start()
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
 
@@ -152,8 +152,11 @@ class LoadStreamNoThread:
         return self.q.get()
     
     def startPrediction(self, server):
-        self.thrP = threading.Thread(target=self.startStreamRtspServer, args=( [server]), kwargs={})
-        self.thrP.start()  
+        # self.thrP = threading.Thread(target=self.service, args=( [server]), kwargs={})
+        # self.thrP.start()  
+
+        self.procP = multiprocessing.Process(target=self.startStreamRtspServer, args=( [server]))
+        self.procP.start()
 
 
         # import pafy  # noqa
