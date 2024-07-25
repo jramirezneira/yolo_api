@@ -148,7 +148,7 @@ def start():
 
     try:
         ldst = LoadStreamNoThread(url)
-        ldst.startPrediction()
+        ldst.startPrediction(server)
         # cap = cv2.VideoCapture(source)
         # cap = ldst.getCap()            
     except Exception as e:
