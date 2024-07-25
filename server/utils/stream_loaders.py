@@ -58,10 +58,12 @@ class LoadStreamNoThread:
         self.thrP = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = YOLO("yolov8n.pt").to(self.device)
+        print("pasa 12")
 
         self.counter=[]
         region_points, self.stride =getConfPropertie("region_points", "stride")
         region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
+        print("pasa 13")
 
         for i, rp in enumerate(region_points_dict["region_points"]):
             ctr= object_counter.ObjectCounter()
@@ -74,17 +76,18 @@ class LoadStreamNoThread:
             self.counter.append(ctr)
 
 
-
+        print(source)
+        print("pasa 14")
 
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
-            check_requirements(('pafy', 'youtube_dl==2020.12.2'))
+            print("pasa 15")
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
-            print("pasa 12")
+            
             self.thr = threading.Thread(target=self.startStreamRtspServer, args=(), kwargs={})
             self.thr.start()  
-            print("pasa 13")
+            
             # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
             # self.proc.start()
             source="rtsp://127.0.0.1:8554/video_stream"
