@@ -166,8 +166,11 @@ def start():
 @app.route('/api/stop', methods=['GET'])
 @cross_origin()
 def stop():    
+    print("pasa 7") 
     # cv2DestroyAllWindows()
     response = {'message': setStatus('offline')}
+
+    print("pasa 8") 
     return jsonify(response)
 
 
