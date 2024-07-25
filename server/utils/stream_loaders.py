@@ -55,26 +55,12 @@ class LoadStreamNoThread:
         print("pasa 11")
 
         self.cmd = 'python3 stream_rtsp_server.py'
-        self.thrP = None
+        self.source = source
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = YOLO("yolov8n.pt").to(self.device)
         print("pasa 12")
 
-        # self.counter=[]
-        # region_points, self.stride =getConfPropertie("region_points", "stride")
-        # region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
-        # print("pasa 13")
-
-        # for i, rp in enumerate(region_points_dict["region_points"]):
-        #     print("pasa i")
-        #     ctr= object_counter.ObjectCounter()
-        #     ctr.set_args(view_img=False,
-        #                 reg_pts=rp,
-        #                 classes_names=names,
-        #                 draw_tracks=True,
-        #                 reg_counts=region_points_dict["reg_counts"][i]
-        #                 )
-        #     self.counter.append(ctr)
+        
 
 
         print(source)
@@ -176,6 +162,22 @@ class LoadStreamNoThread:
         return self.cap
     
     def service(self, server):    
+
+        counter=[]
+        region_points, stride =getConfPropertie("region_points", "stride")
+        region_points_dict = [x for x in region_points if x['source'] == self.source and x['available'] == 1][0]
+        print("pasa 13")
+
+        for i, rp in enumerate(region_points_dict["region_points"]):
+            print("pasa i")
+            ctr= object_counter.ObjectCounter()
+            ctr.set_args(view_img=False,
+                        reg_pts=rp,
+                        classes_names=self.names,
+                        draw_tracks=True,
+                        reg_counts=region_points_dict["reg_counts"][i]
+                        )
+            counter.append(ctr)
        
     
         n=0
@@ -190,7 +192,7 @@ class LoadStreamNoThread:
                 if not success: break                      
                 
                 results=None
-                if n % 7== 0:
+                if n % 3== 0:
                     ret, im0 = self.cap.retrieve()
                     if not ret:
                         break
