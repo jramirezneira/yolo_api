@@ -163,7 +163,25 @@ class LoadStreamNoThread:
     
     def service(self, server):    
 
-       
+        counter=[]
+        region_points, stride =getConfPropertie("region_points", "stride")
+        region_points_dict = [x for x in region_points if x['source'] == self.source and x['available'] == 1][0]
+        print("pasa 13")
+        print(enumerate(region_points_dict["region_points"]))
+        print(object_counter.ObjectCounter())
+        for i, rp in enumerate(region_points_dict["region_points"]):
+            print("pasa i")
+            ctr= object_counter.ObjectCounter()
+            print(ctr)
+            ctr.set_args(view_img=False,
+                        reg_pts=rp,
+                        classes_names=self.names,
+                        draw_tracks=True,
+                        reg_counts=region_points_dict["reg_counts"][i]
+                        )
+            print(ctr)
+            print(i)
+            counter.append(ctr)
        
     
         n=0
