@@ -95,8 +95,10 @@ except ValueError:
 # initializing the threads and running the stream on loop.
 GObject.threads_init()
 
+
 Gst.init(None)
 
 server = GstServer()
 loop = GObject.MainLoop()
 loop.run()
+loop.stop()
