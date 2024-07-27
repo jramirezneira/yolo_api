@@ -169,15 +169,15 @@ def start():
     
 
 
-    try:
-        ldst = LoadStreamNoThread(url)
-        ldst.startPrediction(server)
-        # cap = cv2.VideoCapture(source)
-        # cap = ldst.getCap()            
-    except Exception as e:
-        setStatus("offline")
-        cv2DestroyAllWindows()
-        LOGGER.error("An exception occurred to open cap.release : %s" % e)
+    # try:
+    #     ldst = LoadStreamNoThread(url)
+    #     ldst.startPrediction(server)
+    #     # cap = cv2.VideoCapture(source)
+    #     # cap = ldst.getCap()            
+    # except Exception as e:
+    #     setStatus("offline")
+    #     cv2DestroyAllWindows()
+    #     LOGGER.error("An exception occurred to open cap.release : %s" % e)
     # thrs = threading.Thread(target=service, args=([url]), kwargs={})
     # thrs.start()    
     # proc = multiprocessing.Process(target=service, args=([url]))
