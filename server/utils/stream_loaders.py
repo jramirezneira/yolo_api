@@ -98,10 +98,10 @@ class LoadStreamNoThread:
     def startStreamRtspServer(self):        
         self.proc = subprocess.Popen("python3 stream_rtsp_server.py", stdout=subprocess.PIPE, shell=True)
         out, err = self.proc.communicate() 
-        result = out.split('\n')
-        for lin in result:
-            if not lin.startswith('#'):
-                print(lin)
+        # result = out.split('\n')
+        # for lin in result:
+        #     if not lin.startswith('#'):
+        #         print(lin)
 
     # def stopStreamRtspServer(self):
     #     subprocess.Popen.terminate(self.cmd)
