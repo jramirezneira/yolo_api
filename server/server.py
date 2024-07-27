@@ -147,37 +147,19 @@ def start():
     print("pasa 4")   
 
 
-    counter=[]
-    region_points, stride =getConfPropertie("region_points", "stride")
-    region_points_dict = [x for x in region_points if x['source'] == url and x['available'] == 1][0]
-    print("pasa 13")
-    # print(enumerate(region_points_dict["region_points"]))
-    # print(object_counter.ObjectCounter())
-    for i, rp in enumerate(region_points_dict["region_points"]):
-        print("pasa i")
-        ctr= object_counter.ObjectCounter()
-        print(ctr)
-        ctr.set_args(view_img=False,
-                    reg_pts=rp,
-                    classes_names=names,
-                    draw_tracks=True,
-                    reg_counts=region_points_dict["reg_counts"][i]
-                    )
-        print(ctr)
-        print(i)
-        counter.append(ctr)
+
     
 
 
-    # try:
-    #     ldst = LoadStreamNoThread(url)
-    #     ldst.startPrediction(server)
-    #     # cap = cv2.VideoCapture(source)
-    #     # cap = ldst.getCap()            
-    # except Exception as e:
-    #     setStatus("offline")
-    #     cv2DestroyAllWindows()
-    #     LOGGER.error("An exception occurred to open cap.release : %s" % e)
+    try:
+        ldst = LoadStreamNoThread(url)
+        ldst.startPrediction(server)
+        # cap = cv2.VideoCapture(source)
+        # cap = ldst.getCap()            
+    except Exception as e:
+        setStatus("offline")
+        cv2DestroyAllWindows()
+        LOGGER.error("An exception occurred to open cap.release : %s" % e)
     # thrs = threading.Thread(target=service, args=([url]), kwargs={})
     # thrs.start()    
     # proc = multiprocessing.Process(target=service, args=([url]))
