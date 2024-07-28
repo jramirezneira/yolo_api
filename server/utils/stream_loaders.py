@@ -72,7 +72,7 @@ class LoadStreamNoThread:
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
             
-            self.thr = threading.Thread(target=self.startStreamRtspServer, args=(source=source), kwargs={})
+            self.thr = threading.Thread(target=self.startStreamRtspServer, args=([source]), kwargs={})
             self.thr.start()  
             
             # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
