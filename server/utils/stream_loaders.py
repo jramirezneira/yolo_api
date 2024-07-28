@@ -96,7 +96,7 @@ class LoadStreamNoThread:
         return None
     
     def startStreamRtspServer(self, source):        
-        self.proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id : {0}".format(source), 
+        self.proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
                                      stdout=subprocess.PIPE, shell=True)
         out, err = self.proc.communicate() 
         # result = out.split('\n')
