@@ -92,24 +92,41 @@ def cv2DestroyAllWindows():
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
-                obj.cap.release()    
-                obj.cv2.destroyAllWindows()   
-                obj.proc.kill()
-                obj.thrP.join()
-                LOGGER.info("close release object %s " % obj)
+                obj.cap.release() 
+                LOGGER.info("obj.cap.release() %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
+            try:  
+                obj.cv2.destroyAllWindows()   
+                LOGGER.info("close obj.cv2.destroyAllWindows %s " % obj)
+            except Exception as e:
+                LOGGER.error("An exception occurred in obj.cv2.destroyAllWindows : %s" % e)
 
+            try: 
+                obj.thrP.join()
+                LOGGER.info("close obj.thrP.join %s " % obj)
+            except Exception as e:
+                LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
+
+            try: 
+                obj.proc.kill()
+                LOGGER.info("close obj.proc.kill %s " % obj)
+            except Exception as e:
+                LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
         if isinstance(obj, Popen):
-            try:
-                subprocess.Popen.poll(obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+            try:         
+               
                 os.kill(obj.pid, signal.SIGKILL)
-                subprocess.Popen.kill(obj)
                 LOGGER.info("Popen %s " % obj)
                 LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
             except Exception as e:
-                LOGGER.error("An exception occurred in subprocess.Popen.terminate : %s" % e)
+                LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
+            try:
+               
+                subprocess.Popen.kill(obj)
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+            except Exception as e:
+                LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
 
 
 
