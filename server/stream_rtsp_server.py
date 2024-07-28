@@ -78,7 +78,7 @@ class GstServer(GstRtspServer.RTSPServer):
 
 # getting the required information from the user 
 parser = argparse.ArgumentParser()
-parser.add_argument("--device_id", default = "https://www.youtube.com/watch?v=PtChZ0D7tkE", help="device id for the \
+parser.add_argument("--device_id", help="device id for the \
                 video device or video file location")
 parser.add_argument("--fps", default = 30,  help="fps of the camera", type = int)
 parser.add_argument("--image_width",  default=1080, help="video frame width", type = int)
