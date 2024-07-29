@@ -109,7 +109,7 @@ class LoadStreamNoThread:
         
 
         
-        out, err = proc.communicate() 
+        # out, err = proc.communicate() 
         setProperty("pid", proc.pid)
         # result = out.split('\n')
         # for lin in result:
