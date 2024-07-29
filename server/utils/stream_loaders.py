@@ -20,7 +20,7 @@ from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
 from ultralytics.utils.checks import check_requirements
 import threading
-from utils.general import image_resize, getConfPropertie, setStatus
+from utils.general import image_resize, getConfProperty, setProperty
 import time
 import subprocess
 from subprocess import Popen
@@ -98,7 +98,11 @@ class LoadStreamNoThread:
     def startStreamRtspServer(self, source):        
         self.proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
                                      stdout=subprocess.PIPE, shell=True)
+        
+
+        
         out, err = self.proc.communicate() 
+        setProperty("pid", self.proc.pid)
         # result = out.split('\n')
         # for lin in result:
         #     if not lin.startswith('#'):

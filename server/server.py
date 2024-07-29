@@ -10,7 +10,7 @@ from ultralytics import YOLO
 from ultralytics.solutions import object_counter
 from utils.stream_loaders import LoadImages, LoadStreamNoThread
 import time
-from utils.general import image_resize, getConfPropertie, setStatus
+from utils.general import image_resize, getConfProperty, setProperty
 import cv2
 import boto3
 import torch
@@ -63,7 +63,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 #     appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
 #     return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
 
-ipclient, _=getConfPropertie("ipclient")
+ipclient, _=getConfProperty("ipclient")
 
 server = NetGear(
     address=ipclient,
@@ -91,7 +91,14 @@ LOGGER.info("Running in ip adress : %s" % ipclient)
 
 def cv2DestroyAllWindows():    
     cv2.destroyAllWindows()
-    setStatus("offline")
+    setProperty("status","offline")
+    try: 
+        pid, _=getConfProperty("pid")
+        os.kill(pid, signal.SIGKILL)
+        LOGGER.info("close obj.proc.kill %s " % pid)
+    except Exception as e:
+        LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
+
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
@@ -111,33 +118,29 @@ def cv2DestroyAllWindows():
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
 
-            try: 
-                obj.proc.kill()
-                LOGGER.info("close obj.proc.kill %s " % obj)
-            except Exception as e:
-                LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
-        if isinstance(obj, Popen):
-            LOGGER.info("obj.pid %s " % obj.pid)
-            try:
+            
+        # if isinstance(obj, Popen):
+        #     LOGGER.info("obj.pid %s " % obj.pid)
+        #     try:
                
-                subprocess.Popen.kill(obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-            except Exception as e:
-                LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
-            try: 
-                os.kill(obj.pid, signal.SIGKILL)
-                LOGGER.info("Popen %s " % obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-            except Exception as e:
-                LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
+        #         subprocess.Popen.kill(obj)
+        #         LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+        #     except Exception as e:
+        #         LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
+        #     try: 
+        #         os.kill(obj.pid, signal.SIGKILL)
+        #         LOGGER.info("Popen %s " % obj)
+        #         LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+        #     except Exception as e:
+        #         LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
             
 
 
 
-setStatus("offline")
+setProperty("status","offline")
 
 def region_points():
-    input_dict, _=getConfPropertie("region_points")
+    input_dict, _=getConfProperty("region_points")
     output_dict = [x for x in input_dict if x['available'] == 1]
     return output_dict
 
@@ -149,7 +152,7 @@ def r_points():
 @app.route('/api/status', methods=['GET'])
 @cross_origin()
 def status():
-    response = {'message': getConfPropertie("statusServer")}
+    response = {'message': getConfProperty("statusServer")}
     return jsonify(response)
 
 
@@ -159,7 +162,7 @@ def status():
 def start():
     cv2DestroyAllWindows()
     url=request.args.get('url')
-    response = {'message': setStatus('active')}
+    response = {'message': setProperty("status",'active')}
     print("pasa 6  %s" % url) 
   
     print("pasa 5") 
@@ -178,7 +181,7 @@ def start():
         # cap = cv2.VideoCapture(source)
         # cap = ldst.getCap()            
     except Exception as e:
-        setStatus("offline")
+        setProperty("status","offline")
         cv2DestroyAllWindows()
         LOGGER.error("An exception occurred to open cap.release : %s" % e)
     # thrs = threading.Thread(target=service, args=([url]), kwargs={})
@@ -193,7 +196,7 @@ def start():
 def stop():    
     print("pasa 7") 
     cv2DestroyAllWindows()
-    response = {'message': setStatus('offline')}
+    response = {'message': setProperty("status",'offline')}
 
     print("pasa 8") 
     return jsonify(response)

@@ -21,19 +21,19 @@ s3_client = boto3.client('s3')
 def getAppConf():    
     return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
 
-def getConfPropertie(propertie1, propertie2=None):
+def getConfProperty(property1, property2=None):
     appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
-    return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
+    return appConfJson [property1], appConfJson[property2] if property2 is not None else None
 
-def setStatus(status):    
+def setProperty(key, value):    
     # with open("app.conf",  "r") as json_data_file:
     s3Object=getAppConf()
     data = json.loads(s3Object["Body"].read().decode("utf-8"))
-    data["statusServer"] = status
+    data[key] = value
     s3_client.put_object(        
         Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='variosjavierramirez', Key='app.json'
         )   
-    return status
+    return value
 
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
