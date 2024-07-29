@@ -97,7 +97,7 @@ class LoadStreamNoThread:
     
     def startStreamRtspServer(self, source):        
         self.proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
-                                     stdout=subprocess.PIPE, shell=True)
+                                     stdout=subprocess.PIPE, shell=False)
         
 
         
@@ -223,7 +223,7 @@ class LoadStreamNoThread:
                 continue
 
         cv2.destroyAllWindows()
-        setProperty("status","offline")
+        setProperty("statusServer","offline")
 
 
 class LoadStreams:

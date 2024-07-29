@@ -91,7 +91,7 @@ LOGGER.info("Running in ip adress : %s" % ipclient)
 
 def cv2DestroyAllWindows():    
     cv2.destroyAllWindows()
-    setProperty("status","offline")
+    setProperty("statusServer","offline")
     try: 
         pid, _=getConfProperty("pid")
         os.kill(pid, signal.SIGKILL)
@@ -137,7 +137,7 @@ def cv2DestroyAllWindows():
 
 
 
-setProperty("status","offline")
+setProperty("statusServer","offline")
 
 def region_points():
     input_dict, _=getConfProperty("region_points")
@@ -162,7 +162,7 @@ def status():
 def start():
     cv2DestroyAllWindows()
     url=request.args.get('url')
-    response = {'message': setProperty("status",'active')}
+    response = {'message': setProperty("statusServer",'active')}
     print("pasa 6  %s" % url) 
   
     print("pasa 5") 
@@ -181,7 +181,7 @@ def start():
         # cap = cv2.VideoCapture(source)
         # cap = ldst.getCap()            
     except Exception as e:
-        setProperty("status","offline")
+        setProperty("statusServer","offline")
         cv2DestroyAllWindows()
         LOGGER.error("An exception occurred to open cap.release : %s" % e)
     # thrs = threading.Thread(target=service, args=([url]), kwargs={})
@@ -196,7 +196,7 @@ def start():
 def stop():    
     print("pasa 7") 
     cv2DestroyAllWindows()
-    response = {'message': setProperty("status",'offline')}
+    response = {'message': setProperty("statusServer",'offline')}
 
     print("pasa 8") 
     return jsonify(response)
