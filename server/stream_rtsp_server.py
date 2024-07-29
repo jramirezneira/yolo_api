@@ -19,9 +19,9 @@ gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GObject
 
 
-app = Flask(__name__)
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-app.config['CORS_HEADERS'] = 'Content-Type'
+# app = Flask(__name__)
+# cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Sensor Factory class which inherits the GstRtspServer base class and add
 # properties to it.
@@ -95,34 +95,47 @@ parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video 
 opt = parser.parse_args()
 
 
-@app.route('/api/start', methods=['GET'])
-@cross_origin()
-def start():
-    GObject.threads_init()
-    Gst.init(None)    
-    loop = GObject.MainLoop()
-    loop.run()
+url="https://www.youtube.com/watch?v=PtChZ0D7tkE"
+try:
+    opt.device_id = url
+except ValueError:
+    pass
 
-@app.route('/api/stream', methods=['GET'])
-@cross_origin()
-def startStream():
-
-    url=request.args.get('url')
-    try:
-        opt.device_id = url
-    except ValueError:
-        pass
-
-    server = GstServer()
-
-    response = {'message': 'ok'}
-
-    print("pasa 8") 
-    return jsonify(response)
+GObject.threads_init()
+Gst.init(None)    
+server = GstServer()
+loop = GObject.MainLoop()
+loop.run()
 
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True,  port=5002)
+# @app.route('/api/start', methods=['GET'])
+# @cross_origin()
+# def start():
+#     GObject.threads_init()
+#     Gst.init(None)    
+#     loop = GObject.MainLoop()
+#     loop.run()
+
+# @app.route('/api/stream', methods=['GET'])
+# @cross_origin()
+# def startStream():
+
+#     url=request.args.get('url')
+#     try:
+#         opt.device_id = url
+#     except ValueError:
+#         pass
+
+#     server = GstServer()
+
+#     response = {'message': 'ok'}
+
+#     print("pasa 8") 
+#     return jsonify(response)
+
+
+# if __name__ == '__main__':
+#     app.run(host="0.0.0.0", debug=True,  port=5002)
     
 
     # initializing the threads and running the stream on loop.
