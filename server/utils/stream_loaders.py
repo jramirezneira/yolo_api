@@ -72,11 +72,11 @@ class LoadStreamNoThread:
             # source = pafy.new(source).getbest(preftype='mp4').url   
             cmd="python3 stream_rtsp_server.py"
             
-            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=([source]), kwargs={})
-            # self.thr.start()  
+            self.thr = threading.Thread(target=self.startStreamRtspServer, args=([source]), kwargs={})
+            self.thr.start()  
 
-            proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
-                                     stdout=subprocess.PIPE, shell=True)
+            # proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
+            #                          stdout=subprocess.PIPE, shell=True)
         
 
         
@@ -104,7 +104,7 @@ class LoadStreamNoThread:
         return None
     
     def startStreamRtspServer(self, source):        
-        proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
+        proc = subprocess.Popen("python3 /home/javier/proyectos/yolo_api/server/stream_rtsp_server.py --device_id {0}".format(source), 
                                      stdout=subprocess.PIPE, shell=False)
         
 
