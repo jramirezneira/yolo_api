@@ -10,11 +10,18 @@ import gi
 import cv2
 import argparse
 import pafy
+from flask import Flask, jsonify, request, Response
+from flask_cors import CORS, cross_origin
 
 # import required library like Gstreamer and GstreamerRtspServer
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GObject
+
+
+app = Flask(__name__)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Sensor Factory class which inherits the GstRtspServer base class and add
 # properties to it.
@@ -101,6 +108,12 @@ Gst.init(None)
 
 loop = GObject.MainLoop()
 
-loop.run()
-server = GstServer()
+
+if __name__ == '__main__':
+    server = GstServer()
+    loop.run()
+    app.run(host="0.0.0.0", debug=True,  port=5002)
+
+    
+
 # loop.stop()
