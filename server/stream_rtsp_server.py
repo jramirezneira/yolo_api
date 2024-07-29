@@ -23,7 +23,8 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-
+GObject.threads_init()
+loop = GObject.MainLoop()
 
 
 # Sensor Factory class which inherits the GstRtspServer base class and add
@@ -98,20 +99,14 @@ parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video 
 opt = parser.parse_args()
 
 
-@app.route('/api/startStream', methods=['GET'])
+@app.route('/api/stop', methods=['GET'])
 @cross_origin()
-def startStream():
+def stop():
 
-    url=request.args.get('url')
-    try:
-        opt.device_id = url
-    except ValueError:
-        pass
-
-    server = GstServer()
+    
+    loop.stop()
+    
     response = {'message':'ok'}
-
-    print("pasa 8") 
     return jsonify(response)
 
 
@@ -119,11 +114,18 @@ def startStream():
 @cross_origin()
 def start():
 
-    GObject.threads_init()
-    Gst.init(None)    
-    loop = GObject.MainLoop()
-    loop.run()
+    url=request.args.get('url')
+    try:
+        opt.device_id = url
+    except ValueError:
+        pass
+
     
+    Gst.init(None)    
+    server = GstServer()
+    
+    loop.run()
+
 
 if __name__ == '__main__':    
     app.run(host="0.0.0.0", debug=True,  port=5002)
