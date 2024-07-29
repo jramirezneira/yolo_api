@@ -115,13 +115,19 @@ def startStream():
     return jsonify(response)
 
 
-if __name__ == '__main__':
-    
-    app.run(host="0.0.0.0", debug=True,  port=5002)
+@app.route('/api/start', methods=['GET'])
+@cross_origin()
+def start():
+
     GObject.threads_init()
     Gst.init(None)    
     loop = GObject.MainLoop()
     loop.run()
+    
+
+if __name__ == '__main__':    
+    app.run(host="0.0.0.0", debug=True,  port=5002)
+    
     
 
     # initializing the threads and running the stream on loop.
