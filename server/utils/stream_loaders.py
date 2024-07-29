@@ -169,7 +169,7 @@ class LoadStreamNoThread:
     def service(self, server):    
 
         counter=[]
-        region_points, stride =getConfPropertie("region_points", "stride")
+        region_points, stride =getConfProperty("region_points", "stride")
         region_points_dict = [x for x in region_points if x['source'] == self.source and x['available'] == 1][0]
         print("pasa 13")
         # print(enumerate(region_points_dict["region_points"]))
@@ -223,7 +223,7 @@ class LoadStreamNoThread:
                 continue
 
         cv2.destroyAllWindows()
-        setStatus("offline")
+        setProperty("status","offline")
 
 
 class LoadStreams:
