@@ -10,11 +10,18 @@ import gi
 import cv2
 import argparse
 import pafy
+from flask import Flask, jsonify, request, Response
+from flask_cors import CORS, cross_origin
 
 # import required library like Gstreamer and GstreamerRtspServer
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GObject
+
+
+app = Flask(__name__)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Sensor Factory class which inherits the GstRtspServer base class and add
 # properties to it.
@@ -87,18 +94,24 @@ parser.add_argument("--port", default=8554, help="port to stream video", type = 
 parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video stream uri")
 opt = parser.parse_args()
 
-try:
-    opt.device_id = opt.device_id
-except ValueError:
-    pass
 
-# initializing the threads and running the stream on loop.
-GObject.threads_init()
+@app.route('/api/startStream', methods=['GET'])
+@cross_origin()
+def startStream():
+
+    url=request.args.get('url')
+    try:
+        opt.device_id = url
+    except ValueError:
+        pass
+
+    # initializing the threads and running the stream on loop.
+    GObject.threads_init()
 
 
-Gst.init(None)
+    Gst.init(None)
 
-server = GstServer()
-loop = GObject.MainLoop()
-loop.run()
-loop.stop()
+    server = GstServer()
+    loop = GObject.MainLoop()
+    loop.run()
+    loop.stop()

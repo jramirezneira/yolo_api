@@ -51,6 +51,9 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+
+
+
 # s3_client = boto3.client('s3')
 # def getAppConf():    
 #     return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
