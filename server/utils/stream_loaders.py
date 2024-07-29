@@ -80,8 +80,8 @@ class LoadStreamNoThread:
         
 
         
-        out, err = proc.communicate() 
-        setProperty("pid", proc.pid)
+            out, err = proc.communicate() 
+            setProperty("pid", proc.pid)
             
             # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
             # self.proc.start()
