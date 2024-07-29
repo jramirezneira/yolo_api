@@ -113,16 +113,13 @@ def startStream():
 
 
 if __name__ == '__main__':
+    GObject.threads_init()
+    Gst.init(None)    
+    loop = GObject.MainLoop()
+    loop.run()
     app.run(host="0.0.0.0", debug=True,  port=5002)
     
 
     # initializing the threads and running the stream on loop.
-    GObject.threads_init()
-
-
-    Gst.init(None)
-
     
-    loop = GObject.MainLoop()
-    loop.run()
     # loop.stop()
