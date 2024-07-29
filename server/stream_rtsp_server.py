@@ -105,16 +105,20 @@ def startStream():
     except ValueError:
         pass
 
+    server = GstServer()
+
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", debug=True,  port=5002)
+    
+
     # initializing the threads and running the stream on loop.
     GObject.threads_init()
 
 
     Gst.init(None)
 
-    server = GstServer()
+    
     loop = GObject.MainLoop()
     loop.run()
-    loop.stop()
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True,  port=5002)
+    # loop.stop()
