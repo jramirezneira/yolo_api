@@ -23,10 +23,6 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-GObject.threads_init()
-loop = GObject.MainLoop()
-
-
 # Sensor Factory class which inherits the GstRtspServer base class and add
 # properties to it.
 class SensorFactory(GstRtspServer.RTSPMediaFactory):
@@ -99,20 +95,17 @@ parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video 
 opt = parser.parse_args()
 
 
-@app.route('/api/stop', methods=['GET'])
-@cross_origin()
-def stop():
-
-    
-    loop.stop()
-    
-    response = {'message':'ok'}
-    return jsonify(response)
-
-
 @app.route('/api/start', methods=['GET'])
 @cross_origin()
-def start():
+def startStream():
+    GObject.threads_init()
+    Gst.init(None)    
+    loop = GObject.MainLoop()
+    loop.run()
+
+@app.route('/api/stream', methods=['GET'])
+@cross_origin()
+def startStream():
 
     url=request.args.get('url')
     try:
@@ -120,18 +113,11 @@ def start():
     except ValueError:
         pass
 
-    
-    Gst.init(None)    
     server = GstServer()
-    
-    loop.run()
 
-
-if __name__ == '__main__':    
+if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True,  port=5002)
-    
     
 
     # initializing the threads and running the stream on loop.
     
-    # loop.stop()
