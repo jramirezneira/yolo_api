@@ -117,6 +117,7 @@ def cv2DestroyAllWindows():
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
         if isinstance(obj, Popen):
+            LOGGER.info("obj.pid %s " % obj.pid)
             try:
                
                 subprocess.Popen.kill(obj)
