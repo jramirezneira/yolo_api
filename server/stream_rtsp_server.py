@@ -115,6 +115,12 @@ def startStream():
 
     server = GstServer()
 
+    response = {'message': 'ok'}
+
+    print("pasa 8") 
+    return jsonify(response)
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True,  port=5002)
     
