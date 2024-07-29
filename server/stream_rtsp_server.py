@@ -97,7 +97,7 @@ opt = parser.parse_args()
 
 @app.route('/api/start', methods=['GET'])
 @cross_origin()
-def startStream():
+def start():
     GObject.threads_init()
     Gst.init(None)    
     loop = GObject.MainLoop()
