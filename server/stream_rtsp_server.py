@@ -98,7 +98,9 @@ GObject.threads_init()
 
 Gst.init(None)
 
-server = GstServer()
+
 loop = GObject.MainLoop()
 loop.run()
-loop.stop()
+
+server = GstServer()
+# loop.stop()
