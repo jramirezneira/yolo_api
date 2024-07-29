@@ -106,6 +106,10 @@ def startStream():
         pass
 
     server = GstServer()
+    response = {'message':'ok'}
+
+    print("pasa 8") 
+    return jsonify(response)
 
 
 if __name__ == '__main__':
