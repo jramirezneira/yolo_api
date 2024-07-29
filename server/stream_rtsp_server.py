@@ -106,10 +106,10 @@ GObject.threads_init()
 Gst.init(None)
 
 
-loop = GObject.MainLoop()
+# loop = GObject.MainLoop()
 
-server = GstServer()
-loop.run()
+# server = GstServer()
+# loop.run()
 
 
 if __name__ == '__main__':
