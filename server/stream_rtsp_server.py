@@ -24,10 +24,7 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
-GObject.threads_init()
-Gst.init(None)    
-loop = GObject.MainLoop()
-loop.run()
+
 
 # Sensor Factory class which inherits the GstRtspServer base class and add
 # properties to it.
@@ -121,6 +118,10 @@ def startStream():
 if __name__ == '__main__':
     
     app.run(host="0.0.0.0", debug=True,  port=5002)
+    GObject.threads_init()
+    Gst.init(None)    
+    loop = GObject.MainLoop()
+    loop.run()
     
 
     # initializing the threads and running the stream on loop.
