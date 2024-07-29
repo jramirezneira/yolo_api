@@ -10,18 +10,11 @@ import gi
 import cv2
 import argparse
 import pafy
-from flask import Flask, jsonify, request, Response
-from flask_cors import CORS, cross_origin
 
 # import required library like Gstreamer and GstreamerRtspServer
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GObject
-
-
-# app = Flask(__name__)
-# cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-# app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Sensor Factory class which inherits the GstRtspServer base class and add
 # properties to it.
@@ -85,7 +78,7 @@ class GstServer(GstRtspServer.RTSPServer):
 
 # getting the required information from the user 
 parser = argparse.ArgumentParser()
-parser.add_argument("--device_id", help="device id for the \
+parser.add_argument("--device_id", default = "https://www.youtube.com/watch?v=PtChZ0D7tkE", help="device id for the \
                 video device or video file location")
 parser.add_argument("--fps", default = 30,  help="fps of the camera", type = int)
 parser.add_argument("--image_width",  default=1080, help="video frame width", type = int)
@@ -94,49 +87,18 @@ parser.add_argument("--port", default=8554, help="port to stream video", type = 
 parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video stream uri")
 opt = parser.parse_args()
 
-
-url="https://www.youtube.com/watch?v=PtChZ0D7tkE"
 try:
-    opt.device_id = url
+    opt.device_id = opt.device_id
 except ValueError:
     pass
 
+# initializing the threads and running the stream on loop.
 GObject.threads_init()
-Gst.init(None)    
+
+
+Gst.init(None)
+
 server = GstServer()
 loop = GObject.MainLoop()
 loop.run()
-
-
-# @app.route('/api/start', methods=['GET'])
-# @cross_origin()
-# def start():
-#     GObject.threads_init()
-#     Gst.init(None)    
-#     loop = GObject.MainLoop()
-#     loop.run()
-
-# @app.route('/api/stream', methods=['GET'])
-# @cross_origin()
-# def startStream():
-
-#     url=request.args.get('url')
-#     try:
-#         opt.device_id = url
-#     except ValueError:
-#         pass
-
-#     server = GstServer()
-
-#     response = {'message': 'ok'}
-
-#     print("pasa 8") 
-#     return jsonify(response)
-
-
-# if __name__ == '__main__':
-#     app.run(host="0.0.0.0", debug=True,  port=5002)
-    
-
-    # initializing the threads and running the stream on loop.
-    
+loop.stop()
