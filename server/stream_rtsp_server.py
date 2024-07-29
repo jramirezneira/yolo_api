@@ -100,6 +100,7 @@ Gst.init(None)
 
 
 loop = GObject.MainLoop()
-server = GstServer()
+
 loop.run()
+server = GstServer()
 # loop.stop()
