@@ -99,6 +99,22 @@ def cv2DestroyAllWindows():
     except Exception as e:
         LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
 
+    for obj in gc.get_objects():          
+        if isinstance(obj, Popen):
+            LOGGER.info("obj.pid %s " % obj.pid)
+            try:
+               
+                subprocess.Popen.kill(obj)
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+            except Exception as e:
+                LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
+            try: 
+                os.kill(obj.pid, signal.SIGKILL)
+                LOGGER.info("Popen %s " % obj)
+                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+            except Exception as e:
+                LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
+            
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
@@ -118,23 +134,11 @@ def cv2DestroyAllWindows():
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
 
-            
-        if isinstance(obj, Popen):
-            LOGGER.info("obj.pid %s " % obj.pid)
-            try:
-               
-                subprocess.Popen.kill(obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-            except Exception as e:
-                LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
             try: 
-                os.kill(obj.pid, signal.SIGKILL)
-                LOGGER.info("Popen %s " % obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+                obj.thr.join()
+                LOGGER.info("close obj.thrP.join %s " % obj)
             except Exception as e:
-                LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
-            
-
+                LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
 
 
 setProperty("statusServer","offline")
