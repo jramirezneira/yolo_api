@@ -95,7 +95,7 @@ parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video 
 opt = parser.parse_args()
 
 try:
-    opt.device_id = opt.device_id
+    opt.device_id = "https://www.youtube.com/watch?v=PtChZ0D7tkE"
 except ValueError:
     pass
 
