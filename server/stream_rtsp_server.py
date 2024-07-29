@@ -106,15 +106,16 @@ GObject.threads_init()
 Gst.init(None)
 
 
-# loop = GObject.MainLoop()
 
-# server = GstServer()
-# loop.run()
 
 
 if __name__ == '__main__':
     
     app.run(host="0.0.0.0", debug=True,  port=5002)
+    loop = GObject.MainLoop()
+
+    server = GstServer()
+    loop.run()
 
     
 
