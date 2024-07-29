@@ -108,10 +108,12 @@ Gst.init(None)
 
 loop = GObject.MainLoop()
 
+server = GstServer()
+loop.run()
+
 
 if __name__ == '__main__':
-    server = GstServer()
-    loop.run()
+    
     app.run(host="0.0.0.0", debug=True,  port=5002)
 
     
