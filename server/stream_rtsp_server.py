@@ -16,7 +16,7 @@ from flask_cors import CORS, cross_origin
 # import required library like Gstreamer and GstreamerRtspServer
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
-from gi.repository import Gst, GstRtspServer, GObject
+from gi.repository import Gst, GstRtspServer, GObject, GLib
 
 
 app = Flask(__name__)
@@ -95,22 +95,41 @@ parser.add_argument("--stream_uri", default = "/video_stream", help="rtsp video 
 opt = parser.parse_args()
 
 try:
-    opt.device_id = "https://www.youtube.com/watch?v=PtChZ0D7tkE"
+    opt.device_id =  opt.device_id
 except ValueError:
     pass
 
 # initializing the threads and running the stream on loop.
-GObject.threads_init()
-
-
+GLib.threads_init()
 Gst.init(None)
+# server = GstServer()
+# loop = GObject.MainLoop()
+# loop.run()
+
+# @app.route('/start', methods=['GET'])
+# @cross_origin()
+# def start():    
+#     print("pasa 7") 
 server = GstServer()
-loop = GObject.MainLoop()
-loop.run()
 
 
+thr=GLib.MainLoop()
+thr.run()
+    # response = {'message': 'ok'}
 
+    # print("pasa 8") 
+    # return jsonify(response)
 
+# @app.route('/stop', methods=['GET'])
+# @cross_origin()
+# def stop():    
+#     print("pasa 7") 
+#     # server = GstServer()
+#     GObject.MainLoop().quit()
+#     response = {'message': 'ok'}
+
+#     print("pasa 8") 
+#     return jsonify(response)
 
 # if __name__ == '__main__':
     

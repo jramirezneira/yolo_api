@@ -104,14 +104,14 @@ class LoadStreamNoThread:
         return None
     
     def startStreamRtspServer(self, source):        
-        proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/stream_rtsp_server.py']) 
+        proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/stream_rtsp_server.py', '--device_id', '{0}'.format(source)]) 
         # ("/usr/bin/python3 /home/javier/proyectos/yolo_api/server/stream_rtsp_server.py --device_id {0}".format(source)
                                     #  )
         
 
         
         # out, err = proc.communicate() 
-        setProperty("pid", proc.pid)
+        # setProperty("pid", proc.pid)
         # result = out.split('\n')
         # for lin in result:
         #     if not lin.startswith('#'):

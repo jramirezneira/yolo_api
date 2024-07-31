@@ -18,7 +18,10 @@ import subprocess
 from subprocess import Popen
 import os, signal
 import multiprocessing
-
+import gi
+gi.require_version('Gst', '1.0')
+gi.require_version('GstRtspServer', '1.0')
+from gi.repository import Gst, GstRtspServer, GObject, GLib
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -92,28 +95,30 @@ LOGGER.info("Running in ip adress : %s" % ipclient)
 def cv2DestroyAllWindows():    
     cv2.destroyAllWindows()
     setProperty("statusServer","offline")
-    try: 
-        pid, _=getConfProperty("pid")
-        os.kill(pid, signal.SIGKILL)
-        LOGGER.info("close obj.proc.kill %s " % pid)
-    except Exception as e:
-        LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
+    # try: 
+    #     pid, _=getConfProperty("pid")
+    #     os.kill(pid, signal.SIGKILL)
+    #     LOGGER.info("close obj.proc.kill %s " % pid)
+    # except Exception as e:
+    #     LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
 
-    for obj in gc.get_objects():          
+    for obj in gc.get_objects():  
+        # if isinstance(obj, GLib.MainLoop):
+        #     obj.quit()
+
         if isinstance(obj, Popen):
             LOGGER.info("obj.pid %s " % obj.pid)
-            try:
-               
+            try:               
                 subprocess.Popen.kill(obj)
                 LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
             except Exception as e:
                 LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
-            try: 
-                os.kill(obj.pid, signal.SIGKILL)
-                LOGGER.info("Popen %s " % obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-            except Exception as e:
-                LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
+            # try: 
+            #     os.kill(obj.pid, signal.SIGKILL)
+            #     LOGGER.info("Popen %s " % obj)
+            #     LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
+            # except Exception as e:
+            #     LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
             
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
@@ -136,7 +141,7 @@ def cv2DestroyAllWindows():
 
             try: 
                 obj.thr.join()
-                LOGGER.info("close obj.thrP.join %s " % obj)
+                LOGGER.info("close obj.thr.join %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
 
