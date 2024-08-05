@@ -1,36 +1,65 @@
+# import required libraries
+from vidgear.gears import NetGear
 import cv2
-import socket
-import struct
-import pickle
+# from flask_sock import Sock
+# from flask import Flask
+import base64
+import json
+import asyncio
+ 
+import websockets
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('127.0.0.1', 8485))
-connection = client_socket.makefile('wb')
+# activate Multi-Clients mode
+options = {"multiclient_mode": True}
+client = NetGear(
+        address="0.0.0.0",
+        port="5567",
+        protocol="tcp",
+        pattern=2,
+        receive_mode=True,
+        logging=True,
+        **options
+    ) 
 
-cam = cv2.VideoCapture(0)
+async def handler(websocket, path):
+    cont=0
+    while True:
+        # receive data from server
+        frame = client.recv()
 
-cam.set(3, 320)
-cam.set(4, 240)
+        # check for frame if None
+        if frame is None:
+            break
+        
+       
+        # cont=cont+1
+            
+        im0 = cv2.imencode('.jpg', frame)[1].tobytes()
+        dict_result=dict()
+        dict_result["img"] =base64.b64encode(im0).decode('utf-8')
 
-img_counter = 0
+        await websocket.send(json.dumps(dict_result))
 
-encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+        # {do something with frame here}
 
-while True:
-    ret, frame = cam.read()
-    result, frame = cv2.imencode('.jpg', frame, encode_param)
-#    data = zlib.compress(pickle.dumps(frame, 0))
-    data = pickle.dumps(frame, 0)
-    size = len(data)
+        # Show output window
+        # cv2.imshow("Client 5567 Output", frame)
+
+        # check for 'q' key if pressed
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
+            break
+
+    # # close output window
+    cv2.destroyAllWindows()
+
+    # safely close client
+    client.close()
+
+start_server = websockets.serve(handler, "0.0.0.0", 5000)
+asyncio.get_event_loop().run_until_complete(start_server)
+ 
+asyncio.get_event_loop().run_forever()
+# if __name__ == "__main__":
 
 
-    print("{}: {}".format(img_counter, size))
-    client_socket.sendall(struct.pack(">L", size) + data)
-    img_counter += 1
-    
-    c = cv2.waitKey(1)
-    if c == 27:
-        break
-
-cam.release()
-cv2.destroyAllWindows()

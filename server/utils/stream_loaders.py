@@ -28,6 +28,7 @@ import asyncio
 import multiprocessing
 from ultralytics import YOLO
 from ultralytics.solutions import object_counter
+from vidgear.gears import NetGear, CamGear
 
 
 @dataclass
@@ -52,15 +53,11 @@ class LoadStreamNoThread:
             72: 'refrigerator',  73: 'book',  74: 'clock',  75: 'vase',  76: 'scissors',  77: 'teddy bear',  78: 'hair drier',  79: 'toothbrush'}
 
 
-        print("pasa 11")
-
-        self.cmd = 'python3 stream_rtsp_server.py'
+        
         self.source = source
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = YOLO("yolov8n.pt").to(self.device)
-        print("pasa 12")
-
-        
+       
 
 
         print(source)
@@ -70,10 +67,9 @@ class LoadStreamNoThread:
             print("pasa 15")
             # import pafy
             # source = pafy.new(source).getbest(preftype='mp4').url   
-            cmd="python3 stream_rtsp_server.py"
-            
-            self.thr = threading.Thread(target=self.startStreamRtspServer, args=([source]), kwargs={})
-            self.thr.start()  
+           
+            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=([source]), kwargs={})
+            # self.thr.start()  
 
             # proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
             #                          stdout=subprocess.PIPE, shell=True)
@@ -88,18 +84,18 @@ class LoadStreamNoThread:
             source="rtsp://127.0.0.1:8554/video_stream"
         self.cv2= cv2       
 
-        self.cap=self.openStreamRtspServer(source)               
-        self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
-        if not self.cap.isOpened():
-                raise ConnectionError(f'Failed to open')
+        # self.cap=self.openStreamRtspServer(source)               
+        # self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
+        # if not self.cap.isOpened():
+        #         raise ConnectionError(f'Failed to open')
         
-        (major_ver, minor_ver, subminor_ver) = (self.cv2.__version__).split('.') 
-        if int(major_ver)  < 3 :
-            fps = self.cap.get(self.cv2.cv.CV_CAP_PROP_FPS)
-            print ("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps))
-        else :
-            fps = self.cap.get(self.cv2.CAP_PROP_FPS)
-            print ("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
+        # (major_ver, minor_ver, subminor_ver) = (self.cv2.__version__).split('.') 
+        # if int(major_ver)  < 3 :
+        #     fps = self.cap.get(self.cv2.cv.CV_CAP_PROP_FPS)
+        #     print ("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps))
+        # else :
+        #     fps = self.cap.get(self.cv2.CAP_PROP_FPS)
+        #     print ("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
 
         return None
     
@@ -196,25 +192,30 @@ class LoadStreamNoThread:
             print(ctr)
             print(i)
             counter.append(ctr)
+
+        options = {"STREAM_RESOLUTION": "720p"}
        
-    
+        self.cap = CamGear(source=self.source,  stream_mode=True,  logging=False, **options).start()
         n=0
-        while self.cap.isOpened:        
+        while True:        
             try:
                 time.sleep(0.00000001)
                 n += 1        
             
                 # cap.read()
                 # cap.set(cv2.CAP_PROP_FPS,25) 
-                success = self.cap.grab() 
-                if not success: break                      
-                
+                # success = self.cap.grab() 
+                # if not success: break                      
+                im0 = self.cap.read()
+                if im0 is None:
+                    #if True break the infinite loop
+                    break
                 results=None
                 if n % stride== 0:
-                    ret, im0 = self.cap.retrieve()
-                    if not ret:
-                        break
-                    # im0=image_resize(im0, height = 720)
+                    
+                    # if not ret:
+                    #     break
+                    im0=image_resize(im0, height = 720)
                     dict_result=dict()
                     dict_result["verbose"] =False
                     results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
@@ -223,7 +224,10 @@ class LoadStreamNoThread:
                     for ctr in counter:
                         im0 = ctr.start_counting(im0, results)  
                 # if isStreaming:
-                    server.send(im0)        
+                    server.send(im0)  
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord("q"):
+                        break      
                     # else:
                     #     yield (b'--frame\r\n'
                     #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
@@ -232,6 +236,7 @@ class LoadStreamNoThread:
                 continue
 
         cv2.destroyAllWindows()
+        self.cap.stop()
         setProperty("statusServer","offline")
 
 

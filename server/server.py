@@ -1,5 +1,5 @@
 # import required libraries
-from vidgear.gears import NetGear
+from vidgear.gears import NetGear, CamGear
 import json
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS, cross_origin
@@ -7,7 +7,6 @@ import gc
 from ultralytics.utils.ops import LOGGER
 import threading
 from ultralytics import YOLO
-from ultralytics.solutions import object_counter
 from utils.stream_loaders import LoadImages, LoadStreamNoThread
 import time
 from utils.general import image_resize, getConfProperty, setProperty
@@ -16,17 +15,17 @@ import boto3
 import torch
 import subprocess
 from subprocess import Popen
-import os, signal
-import multiprocessing
-import gi
-gi.require_version('Gst', '1.0')
-gi.require_version('GstRtspServer', '1.0')
-from gi.repository import Gst, GstRtspServer, GObject, GLib
+import os
+import socket
+
+
+
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
 model = YOLO("yolov8n.pt").to(device)
+
 
 
 names = {   0: 'person',  1: 'bicycle',  2: 'car',  3: 'motorcycle',  4: 'airplane',  5: 'bus',  6: 'train',  7: 'truck',
@@ -55,17 +54,6 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
-
-
-# s3_client = boto3.client('s3')
-# def getAppConf():    
-#     return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
-
-
-# def getConfPropertie(propertie1, propertie2=None):
-#     appConfJson = json.loads(getAppConf()["Body"].read().decode("utf-8"))  
-#     return appConfJson [propertie1], appConfJson[propertie2] if propertie2 is not None else None
-
 ipclient, _=getConfProperty("ipclient")
 
 server = NetGear(
@@ -79,7 +67,6 @@ server = NetGear(
 
 LOGGER.info("Running in ip adress : %s" % ipclient)
 
-# device: str = "mps" if torch.backends.mps.is_available() else "cpu"
 
 
 # def setStatus(status):    
@@ -102,28 +89,11 @@ def cv2DestroyAllWindows():
     # except Exception as e:
     #     LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
 
-    for obj in gc.get_objects():  
-        # if isinstance(obj, GLib.MainLoop):
-        #     obj.quit()
-
-        if isinstance(obj, Popen):
-            LOGGER.info("obj.pid %s " % obj.pid)
-            try:               
-                subprocess.Popen.kill(obj)
-                LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-            except Exception as e:
-                LOGGER.error("An exception occurred in subprocess.Popen.kill(obj) : %s" % e)
-            # try: 
-            #     os.kill(obj.pid, signal.SIGKILL)
-            #     LOGGER.info("Popen %s " % obj)
-            #     LOGGER.info("status Popen %s " % subprocess.Popen.poll(obj))
-            # except Exception as e:
-            #     LOGGER.error("An exception occurred in os.kill(obj.pid, signal.SIGKILL) : %s" % e)
             
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
-                obj.cap.release() 
+                obj.cap.stop() 
                 LOGGER.info("obj.cap.release() %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
@@ -136,12 +106,6 @@ def cv2DestroyAllWindows():
             try: 
                 obj.thrP.join()
                 LOGGER.info("close obj.thrP.join %s " % obj)
-            except Exception as e:
-                LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
-
-            try: 
-                obj.thr.join()
-                LOGGER.info("close obj.thr.join %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
 
@@ -173,22 +137,10 @@ def start():
     url=request.args.get('url')
     response = {'message': setProperty("statusServer",'active')}
     print("pasa 6  %s" % url) 
-  
-    print("pasa 5") 
-    
-        # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
-    print("pasa 4")   
-
-
-
-    
-
 
     try:
         ldst = LoadStreamNoThread(url)
         ldst.startPrediction(server)
-        # cap = cv2.VideoCapture(source)
-        # cap = ldst.getCap()            
     except Exception as e:
         setProperty("statusServer","offline")
         cv2DestroyAllWindows()
@@ -296,8 +248,23 @@ data_dict = {}
 #     source = request.args.get('url')    
 #     return Response(service(source, True, False), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/clientws.py']) 
 
 if __name__ == '__main__':
+    try:
+        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        port = 5567
+        location = ("0.0.0.0", port)
+        check = a_socket.connect_ex(location)
+
+        if check == 0:
+            print("Port is open : %s" % port)
+        else:
+            proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/clientws.py']) 
+    except Exception as e:
+        LOGGER.warning("Error subprocess.Popen : %s" % e)
+
     app.run(host="0.0.0.0", debug=True,  port=5001)
 
 

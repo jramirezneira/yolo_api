@@ -17,7 +17,7 @@ from flask_cors import CORS, cross_origin
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GObject, GLib
-
+from vidgear.gears import NetGear, CamGear
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -28,41 +28,52 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 class SensorFactory(GstRtspServer.RTSPMediaFactory):
     def __init__(self, **properties):
         super(SensorFactory, self).__init__(**properties)		
-        source = pafy.new( opt.device_id).getbest(preftype='mp4').url  
-        self.cap = cv2.VideoCapture(source)
+        # source = pafy.new( opt.device_id).getbest(preftype='mp4').url  
+        # self.cap = cv2.VideoCapture(source)
+        
+        self.cap = CamGear(source=opt.device_id,  stream_mode=True,  logging=True).start()
         self.number_frames = 0
-        self.fps = opt.fps
+        self.fps =int(self.cap.framerate)
+        self.image_height=720
+        # image_width
+        
+
+        r = self.image_height / float(self.cap.ytv_metadata['height'])
+        self.image_width = int(self.cap.ytv_metadata['width'] * r)
+
+        # self.fps = opt.fps
         self.duration = 1 / self.fps * Gst.SECOND  # duration of a frame in nanoseconds
         self.launch_string = 'appsrc name=source is-live=true block=true format=GST_FORMAT_TIME ' \
                              'caps=video/x-raw,format=BGR,width={},height={},framerate={}/1 ' \
                              '! videoconvert ! video/x-raw,format=I420 ' \
                              '! x264enc speed-preset=ultrafast tune=zerolatency ' \
                              '! rtph264pay config-interval=1 name=pay0 pt=96' \
-                             .format(opt.image_width, opt.image_height, self.fps)
+                             .format(self.image_width, self.image_height, self.fps)
     # method to capture the video feed from the camera and push it to the
     # streaming buffer.
     def on_need_data(self, src, length):
-        if self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret:
+        # if self.cap.isOpened():
+        if True:
+            frame = self.cap.read()
+            if frame is None:
+                return
                 # It is better to change the resolution of the camera 
                 # instead of changing the image shape as it affects the image quality.
-                frame = cv2.resize(frame, (opt.image_width, opt.image_height), \
-                    interpolation = cv2.INTER_LINEAR)
-                data = frame.tostring()
-                buf = Gst.Buffer.new_allocate(None, len(data), None)
-                buf.fill(0, data)
-                buf.duration = self.duration
-                timestamp = self.number_frames * self.duration
-                buf.pts = buf.dts = int(timestamp)
-                buf.offset = timestamp
-                self.number_frames += 1
-                retval = src.emit('push-buffer', buf)
-                print('pushed buffer, frame {}, duration {} ns, durations {} s'.format(self.number_frames,
-                                                                                       self.duration,
-                                                                                       self.duration / Gst.SECOND))
-                if retval != Gst.FlowReturn.OK:
-                    print(retval)
+            frame = cv2.resize(frame, (self.image_width, self.image_height), interpolation = cv2.INTER_LINEAR)
+            data = frame.tostring()
+            buf = Gst.Buffer.new_allocate(None, len(data), None)
+            buf.fill(0, data)
+            buf.duration = self.duration
+            timestamp = self.number_frames * self.duration
+            buf.pts = buf.dts = int(timestamp)
+            buf.offset = timestamp
+            self.number_frames += 1
+            retval = src.emit('push-buffer', buf)
+            # print('pushed buffer, frame {}, duration {} ns, durations {} s'.format(self.number_frames,
+            #                                                                         self.duration,
+            #                                                                         self.duration / Gst.SECOND))
+            if retval != Gst.FlowReturn.OK:
+                print(retval)
     # attach the launch string to the override method
     def do_create_element(self, url):
         return Gst.parse_launch(self.launch_string)
