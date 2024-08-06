@@ -193,7 +193,7 @@ class LoadStreamNoThread:
             print(i)
             counter.append(ctr)
 
-        options = {"STREAM_RESOLUTION": "720p"}
+        options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1080, "CAP_PROP_FRAME_HEIGHT":720}
        
         self.cap = CamGear(source=self.source,  stream_mode=True,  logging=False, **options).start()
         n=0
@@ -215,7 +215,7 @@ class LoadStreamNoThread:
                     
                     # if not ret:
                     #     break
-                    im0=image_resize(im0, height = 720)
+                    # im0=image_resize(im0, height = 720)
                     dict_result=dict()
                     dict_result["verbose"] =False
                     results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
