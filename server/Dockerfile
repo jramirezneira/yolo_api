@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.8.10-buster
+FROM python:3.10.12-buster
 
 # Running every next command wih this user
 USER root
@@ -23,6 +23,6 @@ RUN pip install --trusted-host pypi.python.org -r requirements2.txt
 
 # Exposing the flask app port from container to host
 EXPOSE 5001
-
+EXPOSE 5000
 # Starting application
 ENTRYPOINT  ["python", "server.py"]

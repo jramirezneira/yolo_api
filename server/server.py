@@ -19,27 +19,9 @@ import os
 import socket
 
 
-
-
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
 model = YOLO("yolov8n.pt").to(device)
-
-
-
-names = {   0: 'person',  1: 'bicycle',  2: 'car',  3: 'motorcycle',  4: 'airplane',  5: 'bus',  6: 'train',  7: 'truck',
-  8: 'boat',  9: 'traffic light',  10: 'fire hydrant',  11: 'stop sign',  12: 'parking meter',  13: 'bench',  14: 'bird',
-  15: 'cat',  16: 'dog',  17: 'horse',  18: 'sheep',  19: 'cow',  20: 'elephant',  21: 'bear',  22: 'zebra',  23: 'giraffe',
-  24: 'backpack',  25: 'umbrella',  26: 'handbag',  27: 'tie',  28: 'suitcase',  29: 'frisbee',  30: 'skis',  31: 'snwboard',
-  32: 'sports ball',  33: 'kite',  34: 'baseball bat',  35: 'baseball glove',  36: 'skateboard',  37: 'surfboard',  38: 'tennis racket',
-  39: 'bottle',  40: 'wine glass',  41: 'cup',  42: 'fork',  43: 'knife',  44: 'spoon',  45: 'bowl',  46: 'banana',  47: 'apple',
-  48: 'sandwich',  49: 'orange',  50: 'broccoli',  51: 'carrot',  52: 'hot dog',  53: 'pizza',  54: 'donut',  55: 'cake',
-  56: 'chair',  57: 'couch',  58: 'potted plant',  59: 'bed',  60: 'dining table',  61: 'toilet',  62: 'tv',  63: 'laptop',
-  64: 'mouse',  65: 'remote',  66: 'keyboard',  67: 'cell phone',  68: 'microwave',  69: 'oven',  70: 'toaster',  71: 'sink',
-  72: 'refrigerator',  73: 'book',  74: 'clock',  75: 'vase',  76: 'scissors',  77: 'teddy bear',  78: 'hair drier',  79: 'toothbrush'}
-
-
 
 
 video, best, cap = None, None, None
@@ -54,10 +36,9 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
-ipclient, _=getConfProperty("ipclient")
 
 server = NetGear(
-    address=ipclient,
+    address="0.0.0.0",
     port=["5567"],
     protocol="tcp",
     pattern=2,
@@ -65,36 +46,24 @@ server = NetGear(
     **options
 )
 
-LOGGER.info("Running in ip adress : %s" % ipclient)
 
-
-
-# def setStatus(status):    
-#     # with open("app.conf",  "r") as json_data_file:
-#     s3Object=getAppConf()
-#     data = json.loads(s3Object["Body"].read().decode("utf-8"))
-#     data["statusServer"] = status
-#     s3_client.put_object(        
-#         Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='variosjavierramirez', Key='app.json'
-#         )   
-#     return status
 
 def cv2DestroyAllWindows():    
     cv2.destroyAllWindows()
     setProperty("statusServer","offline")
-    # try: 
-    #     pid, _=getConfProperty("pid")
-    #     os.kill(pid, signal.SIGKILL)
-    #     LOGGER.info("close obj.proc.kill %s " % pid)
-    # except Exception as e:
-    #     LOGGER.error("An exception occurred in obj.proc.kill : %s" % e)
-
             
     for obj in gc.get_objects():
         if isinstance(obj, LoadStreamNoThread):
             try:
-                obj.cap.stop() 
-                LOGGER.info("obj.cap.release() %s " % obj)
+                if obj.cap.stop:
+                    obj.cap.stop() 
+                    LOGGER.info("obj.cap.stop() %s " % obj)
+            except Exception as e:
+                LOGGER.error("An exception occurred in obj.cap.stop : %s" % e)
+            try:
+                if obj.cap.release:
+                    obj.cap.release() 
+                    LOGGER.info("obj.cap.release() %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
             try:  
@@ -102,7 +71,6 @@ def cv2DestroyAllWindows():
                 LOGGER.info("close obj.cv2.destroyAllWindows %s " % obj)
             except Exception as e:
                 LOGGER.error("An exception occurred in obj.cv2.destroyAllWindows : %s" % e)
-
             try: 
                 obj.thrP.join()
                 LOGGER.info("close obj.thrP.join %s " % obj)
@@ -145,10 +113,6 @@ def start():
         setProperty("statusServer","offline")
         cv2DestroyAllWindows()
         LOGGER.error("An exception occurred to open cap.release : %s" % e)
-    # thrs = threading.Thread(target=service, args=([url]), kwargs={})
-    # thrs.start()    
-    # proc = multiprocessing.Process(target=service, args=([url]))
-    # proc.start()
     return jsonify(response)
 
 
@@ -158,114 +122,20 @@ def stop():
     print("pasa 7") 
     cv2DestroyAllWindows()
     response = {'message': setProperty("statusServer",'offline')}
-
     print("pasa 8") 
     return jsonify(response)
 
 
-# Open suitable video stream (webcam on first index in our case)
-# Define received data dictionary
-data_dict = {}
 
-# loop over until KeyBoard Interrupted
-
-# def service(source):    
-#     counter=[]
-#     region_points, stride =getConfPropertie("region_points", "stride")
-#     region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
-
-#     for i, rp in enumerate(region_points_dict["region_points"]):
-#         ctr= object_counter.ObjectCounter()
-#         ctr.set_args(view_img=False,
-#                     reg_pts=rp,
-#                     classes_names=names,
-#                     draw_tracks=True,
-#                     reg_counts=region_points_dict["reg_counts"][i]
-#                     )
-#         counter.append(ctr)
-#     print("pasa 5") 
-    
-#         # dataset =LoadStreams(source, imgsz=[288, 480], auto=True, vid_stride=1)     
-#     print("pasa 4")   
-#     try:
-#         ldst = LoadStreamNoThread(source)
-#         # cap = cv2.VideoCapture(source)
-#         cap = ldst.getCap()            
-#     except Exception as e:
-#         setStatus("offline")
-#         cv2DestroyAllWindows()
-#         LOGGER.error("An exception occurred to open cap.release : %s" % e)
-#         return
-#     # else:
-#     #     dataset = LoadImages(source, imgsz=[288, 480], stride=32, auto=True, vid_stride=1)
-
-#     # for frame_idx, batch in enumerate(dataset):
-#         # 
-#     n=0
-#     while cap.isOpened:        
-#         try:
-#             time.sleep(0.00000001)
-#             n += 1        
-           
-#             # cap.read()
-#             # cap.set(cv2.CAP_PROP_FPS,25) 
-#             success = cap.grab() 
-#             if not success: break                      
-            
-#             results=None
-#             if n % stride== 0:
-#                 ret, im0 = cap.retrieve()
-#                 if not ret:
-#                     break
-#                 im0=image_resize(im0, height = 720)
-#                 dict_result=dict()
-#                 dict_result["verbose"] =False
-#                 results = model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
-
-               
-#                 for ctr in counter:
-#                     im0 = ctr.start_counting(im0, results)  
-#             # if isStreaming:
-#                 server.send(im0)        
-#                 # else:
-#                 #     yield (b'--frame\r\n'
-#                 #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
-#         except Exception as e:
-#             LOGGER.error("Error in while read : %s" % e)
-#             continue
-
-#     cv2.destroyAllWindows()
-#     setStatus("offline")
-      
-
-    # safely close video stream
-    
-
-
-# @app.route('/detect',methods = ['POST', 'GET'])
-# def video_feed():
-#     """Video streaming home page."""
-#     source = request.args.get('url')    
-#     return Response(service(source, True, False), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/clientws.py']) 
 
 if __name__ == '__main__':
     try:
-        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        port = 5567
-        location = ("0.0.0.0", port)
-        check = a_socket.connect_ex(location)
-
-        if check == 0:
-            print("Port is open : %s" % port)
-        else:
-            proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/clientws.py']) 
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        print(dir_path)
+        proc = subprocess.Popen (['python',  '%s/clientws.py' % dir_path]) 
     except Exception as e:
         LOGGER.warning("Error subprocess.Popen : %s" % e)
-
-    app.run(host="0.0.0.0", debug=True,  port=5001)
+    app.run(host="0.0.0.0", debug=False,  port=5001)
 
 
 

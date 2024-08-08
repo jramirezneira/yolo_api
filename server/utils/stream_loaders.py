@@ -58,36 +58,45 @@ class LoadStreamNoThread:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = YOLO("yolov8n.pt").to(self.device)
        
-
+        self.cv2= cv2 
+        self.type="yt"
 
         print(source)
         print("pasa 14")
 
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             print("pasa 15")
-            # import pafy
-            # source = pafy.new(source).getbest(preftype='mp4').url   
+            options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1080, "CAP_PROP_FRAME_HEIGHT":720}       
+            self.cap = CamGear(source=self.source,  stream_mode=True,  logging=False, **options).start()
+        else:
+            self.cap = self.cv2.VideoCapture(source)
+            self.type="rtsp"
+
+        self.counter=[]
+        region_points, self.stride =getConfProperty("region_points", "stride")
+        region_points_dict = [x for x in region_points if x['source'] == self.source and x['available'] == 1][0]
+        print("pasa 13")
+        for i, rp in enumerate(region_points_dict["region_points"]):
+            print("pasa i")
+            ctr= object_counter.ObjectCounter()
+            print(ctr)
+            ctr.set_args(view_img=False,
+                        reg_pts=rp,
+                        classes_names=self.names,
+                        draw_tracks=True,
+                        reg_counts=region_points_dict["reg_counts"][i]
+                        )
+            print(ctr)
+            print(i)
+            self.counter.append(ctr)
+
            
-            # self.thr = threading.Thread(target=self.startStreamRtspServer, args=([source]), kwargs={})
-            # self.thr.start()  
-
-            # proc = subprocess.Popen("python3 stream_rtsp_server.py --device_id {0}".format(source), 
-            #                          stdout=subprocess.PIPE, shell=True)
-        
-
-        
-            # out, err = proc.communicate() 
-            # setProperty("pid", proc.pid)
-            
-            # self.proc = multiprocessing.Process(target=self.startStreamRtspServer, args=())
-            # self.proc.start()
-            source="rtsp://127.0.0.1:8554/video_stream"
-        self.cv2= cv2       
+           
+              
 
         # self.cap=self.openStreamRtspServer(source)               
         # self.cap.set(self.cv2.CAP_PROP_BUFFERSIZE,500)
-        # if not self.cap.isOpened():
-        #         raise ConnectionError(f'Failed to open')
+        #c
         
         # (major_ver, minor_ver, subminor_ver) = (self.cv2.__version__).split('.') 
         # if int(major_ver)  < 3 :
@@ -99,22 +108,8 @@ class LoadStreamNoThread:
 
         return None
     
-    def startStreamRtspServer(self, source):        
-        proc = subprocess.Popen (['python3', '/home/javier/proyectos/yolo_api/server/stream_rtsp_server.py', '--device_id', '{0}'.format(source)]) 
-        # ("/usr/bin/python3 /home/javier/proyectos/yolo_api/server/stream_rtsp_server.py --device_id {0}".format(source)
-                                    #  )
-        
-
-        
-        # out, err = proc.communicate() 
-        # setProperty("pid", proc.pid)
-        # result = out.split('\n')
-        # for lin in result:
-        #     if not lin.startswith('#'):
-        #         print(lin)
-
-    # def stopStreamRtspServer(self):
-    #     subprocess.Popen.terminate(self.cmd)
+                         #  )
+      
 
     def openStreamRtspServer(self, source):
         while True:
@@ -154,64 +149,27 @@ class LoadStreamNoThread:
         return self.q.get()
     
     def startPrediction(self, server):
-        self.thrP = threading.Thread(target=self.service, args=( [server]), kwargs={})
+        self.thrP = threading.Thread(target=self.service if self.type=="yt" else self.serviceRtsp, args=( [server]), kwargs={})
         self.thrP.start()  
 
-        # self.procP = multiprocessing.Process(target=self.service, args=( [server]))
-        # self.procP.start()
-
-
-        # import pafy  # noqa
-        # source = pafy.new(source).getbest(preftype='mp4').url
-        # self.cap = cv2.VideoCapture(source)
-        # assert self.cap.isOpened(), "Error reading video file"
-        # return None
 
     def getCap(self):
         print("pasa 0")
         return self.cap
     
-    def service(self, server):    
-
-        counter=[]
-        region_points, stride =getConfProperty("region_points", "stride")
-        region_points_dict = [x for x in region_points if x['source'] == self.source and x['available'] == 1][0]
-        print("pasa 13")
-        # print(enumerate(region_points_dict["region_points"]))
-        # print(object_counter.ObjectCounter())
-        for i, rp in enumerate(region_points_dict["region_points"]):
-            print("pasa i")
-            ctr= object_counter.ObjectCounter()
-            print(ctr)
-            ctr.set_args(view_img=False,
-                        reg_pts=rp,
-                        classes_names=self.names,
-                        draw_tracks=True,
-                        reg_counts=region_points_dict["reg_counts"][i]
-                        )
-            print(ctr)
-            print(i)
-            counter.append(ctr)
-
-        options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1080, "CAP_PROP_FRAME_HEIGHT":720}
-       
-        self.cap = CamGear(source=self.source,  stream_mode=True,  logging=False, **options).start()
+    def service(self, server):              
         n=0
         while True:        
             try:
                 time.sleep(0.00000001)
                 n += 1        
-            
-                # cap.read()
-                # cap.set(cv2.CAP_PROP_FPS,25) 
-                # success = self.cap.grab() 
-                # if not success: break                      
+
                 im0 = self.cap.read()
                 if im0 is None:
                     #if True break the infinite loop
                     break
                 results=None
-                if n % stride== 0:
+                if n % self.stride== 0:
                     
                     # if not ret:
                     #     break
@@ -221,7 +179,7 @@ class LoadStreamNoThread:
                     results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
 
                 
-                    for ctr in counter:
+                    for ctr in self.counter:
                         im0 = ctr.start_counting(im0, results)  
                 # if isStreaming:
                     server.send(im0)  
@@ -229,15 +187,47 @@ class LoadStreamNoThread:
                     if key == ord("q"):
                         break      
                     # else:
-                    #     yield (b'--frame\r\n'
-                    #             b'Content-Type: image/jpeg\r\n\r\n' + im0 + b'\r\n')
             except Exception as e:
                 LOGGER.error("Error in while read : %s" % e)
                 continue
 
-        cv2.destroyAllWindows()
+        self.cv2.destroyAllWindows()
         self.cap.stop()
         setProperty("statusServer","offline")
+
+    
+    def serviceRtsp(self, server):                
+
+        if not self.cap.isOpened():
+            raise ConnectionError(f'Failed to open')
+       
+        n=0       
+        while self.cap.isOpened():
+            try:     
+                n += 1
+                self.cap.grab()  # .read() = .grab() followed by .retrieve()
+                if n % self.stride == 0:
+                    success, im0 = self.cap.retrieve()
+                    if success:
+                        im0 = image_resize(im0, height = 720)
+                        dict_result=dict()
+                        dict_result["verbose"] =False
+                        results = self.model.track(im0, persist=True, imgsz=640, show=False, **dict_result)
+                
+                        for ctr in self.counter:
+                            im0 = ctr.start_counting(im0, results) 
+
+                    server.send(im0)  
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord("q"):
+                        break                     
+                        
+            except:
+                LOGGER.error("Error in cv2.VideoCapture instance")    
+
+        self.cv2.destroyAllWindows()
+        setProperty("statusServer","offline")
+
 
 
 class LoadStreams:

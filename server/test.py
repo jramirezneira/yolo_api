@@ -1,18 +1,40 @@
-from flask import Flask, jsonify, request, Response
-import boto3
-import json
-from pkg_resources import parse_version
+# import required libraries
+import cv2
+from vidgear.gears import CamGear
+from vidgear.gears import WriteGear
+import os
+# open any valid video stream(for e.g `foo.mp4` file)
 
-app = Flask(__name__)
-print("This line will be printed.")
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print(dir_path)
 
-s3_client = boto3.client('s3')
+options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1080, "CAP_PROP_FRAME_HEIGHT":720}       
+stream = CamGear(source="https://www.youtube.com/watch?v=MNn9qKG2UFI",  stream_mode=True,  logging=False, **options).start()
 
-response = s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')
+# define required FFmpeg parameters for your writer
+output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}
 
-object_content = response["Body"].read().decode("utf-8")
+# Define writer with defined parameters
+writer = WriteGear(output = 'rtsp://localhost:5454/test', logging =True, **output_params)
 
-data = json.loads(object_content)
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True,  port=5001)
+# loop over
+while True:
+
+    # read frames from stream
+    frame = stream.read()
+
+    # check for frame if Nonetype
+    if frame is None:
+        break
+
+    # {do something with the frame here}
+
+    # write frame to writer
+    writer.write(frame)
+
+# safely close video stream
+stream.stop()
+
+# safely close writer
+writer.close()
