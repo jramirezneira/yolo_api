@@ -44,7 +44,7 @@ class Custom_Stream_Class:
         self.model = YOLO("yolov8n.pt").to(self.device)
         self.cv2= cv2 
         self.type="yt"
-        self.default_img = cv2.imread('logo512.png', 0) 
+        # self.default_img = cv2.imread('logo512.png', 0) 
 
     def change(self, source=None):
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
