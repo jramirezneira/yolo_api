@@ -6,8 +6,8 @@ import base64
 import json
 import asyncio
 from ultralytics.utils.ops import LOGGER
-import websockets
-import socket
+# import websockets
+# import socket
 
 # activate Multi-Clients mode
 options = {"multiclient_mode": True}

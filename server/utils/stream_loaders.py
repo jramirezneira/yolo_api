@@ -68,8 +68,15 @@ class LoadStreamNoThread:
             print("pasa 15")
             options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1080, "CAP_PROP_FRAME_HEIGHT":720}       
             self.cap = CamGear(source=self.source,  stream_mode=True,  logging=False, **options).start()
+            # check_requirements(('pafy', 'youtube_dl'))
+            # import pafy  # noqa
+            # source = pafy.new(source).getbest(preftype="mp4").url  # YouTube URL
+            # self.cap = self.cv2.VideoCapture(source)
+            # self.type="rtsp"
         else:
             self.cap = self.cv2.VideoCapture(source)
+            # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 160)
+            # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
             self.type="rtsp"
 
         self.counter=[]

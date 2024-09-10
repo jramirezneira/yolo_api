@@ -18,6 +18,9 @@ from subprocess import Popen
 import os
 # import socket
 import traceback
+from clientws3 import Custom_Stream_Class
+import uvicorn
+from vidgear.gears.asyncio import WebGear_RTC
 
 
 
@@ -29,8 +32,8 @@ model = YOLO("yolov8n.pt").to(device)
 video, best, cap = None, None, None
 
 
-# activate multiclient_mode mode
-options = {"multiclient_mode": True}
+# # activate multiclient_mode mode
+# options = {"multiclient_mode": True}
 
 
 app = Flask(__name__)
@@ -39,45 +42,35 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 
-server = NetGear(
-    address="0.0.0.0",
-    port=["5567"],
-    protocol="tcp",
-    pattern=2,
-    logging=True,
-    **options
-)
-
-
 
 def cv2DestroyAllWindows():    
     cv2.destroyAllWindows()
-    setProperty("statusServer","offline")
+    # setProperty("statusServer","offline")
             
+    
     for obj in gc.get_objects():
-        if isinstance(obj, LoadStreamNoThread):
+        # if isinstance(obj, CamGear):
+        #     try:
+        #         obj.stop()
+        #     except Exception as e:
+        #         LOGGER.error("An exception occurred in CamGear.stop() : %s" % e)
+
+        if isinstance(obj, Custom_Stream_Class):
             try:
-                if obj.cap.stop:
-                    obj.cap.stop() 
-                    LOGGER.info("obj.cap.stop() %s " % obj)
+                obj.source.stop()
             except Exception as e:
-                LOGGER.error("An exception occurred in obj.cap.stop : %s" % e)
+                LOGGER.error("An exception occurred in source.stop() : %s" % e)
+
             try:
-                if obj.cap.release:
-                    obj.cap.release() 
-                    LOGGER.info("obj.cap.release() %s " % obj)
+                obj.source.release()
             except Exception as e:
-                LOGGER.error("An exception occurred in obj.cap.release : %s" % e)
+                LOGGER.error("An exception occurred in source.release() : %s" % e)
+
             try:  
-                obj.cv2.destroyAllWindows()   
-                LOGGER.info("close obj.cv2.destroyAllWindows %s " % obj)
+                obj.cv2.destroyAllWindows()                   
             except Exception as e:
-                LOGGER.error("An exception occurred in obj.cv2.destroyAllWindows : %s" % e)
-            try: 
-                obj.thrP.join()
-                LOGGER.info("close obj.thrP.join %s " % obj)
-            except Exception as e:
-                LOGGER.error("An exception occurred in obj.thrP.join : %s" % e)
+                LOGGER.info("close obj.cv2.destroyAllWindows %s " % e)
+    
 
 
 setProperty("statusServer","offline")
@@ -95,7 +88,8 @@ def r_points():
 @app.route('/api/status', methods=['GET'])
 @cross_origin()
 def status():
-    response = {'message': getConfProperty("statusServer")}
+    status, _= getConfProperty("statusServer")
+    response = {'message': status}
     return jsonify(response)
 
 
@@ -105,12 +99,18 @@ def status():
 def start():
     cv2DestroyAllWindows()
     url=request.args.get('url')
-    response = {'message': setProperty("statusServer",'active')}
+    response = {'message': setProperty("statusServer",'loading')}
     print("pasa 6  %s" % url) 
 
+    # isnew=True
+    
+    # if isnew:
     try:
-        ldst = LoadStreamNoThread(url)
-        ldst.startPrediction(server)
+        for obj in gc.get_objects():
+            if isinstance(obj, Custom_Stream_Class):
+                # isnew=False                    
+                obj.change(url)
+                setProperty("statusServer",'active')
     except Exception as e:
         setProperty("statusServer","offline")
         cv2DestroyAllWindows()
@@ -129,18 +129,30 @@ def stop():
     print("pasa 8") 
     return jsonify(response)
 
+def service ():
+    options = {"custom_stream": Custom_Stream_Class()}
+
+    # initialize WebGear_RTC app without any source
+    web = WebGear_RTC(logging=True, **options)
+
+    # run this app on Uvicorn server at address http://localhost:8080/
+    uvicorn.run(web(), host="0.0.0.0", port=5000)
+
+    # close app safely
+    web.shutdown()
+
+
 
 
 
 if __name__ == '__main__':
-    try:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        print(dir_path)
-        proc = subprocess.Popen (['python',  '%s/clientws3.py' % dir_path]) 
-    except Exception as e:
-        LOGGER.warning("atempt with python3 : %s" % e)
-        proc = subprocess.Popen (['python3',  '%s/clientws3.py' % dir_path]) 
+
+    thrP = threading.Thread(target=service,  args=(), kwargs={})
+    thrP.start()  
+
     app.run(host="0.0.0.0", debug=False,  port=5001)
+    
+    
 
 
 

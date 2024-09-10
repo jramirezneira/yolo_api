@@ -17,6 +17,8 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv8API root directory
 RANK = int(os.getenv('RANK', -1))
 
+# session = boto3.Session(profile_name='mfa')
+# s3_client = session.client('s3')
 s3_client = boto3.client('s3')
 def getAppConf():    
     return  s3_client.get_object(Bucket='variosjavierramirez', Key='app.json')

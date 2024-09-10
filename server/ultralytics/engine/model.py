@@ -465,7 +465,11 @@ class Model(nn.Module):
             register_tracker(self, persist)
         kwargs["conf"] = kwargs.get("conf") or 0.1  # ByteTrack-based method needs low confidence predictions as input
         kwargs["mode"] = "track"
-        return self.predict(source=source,  device="0", stream=stream, **kwargs)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if device=='cuda':
+            return self.predict(source=source,  device="0", stream=stream, **kwargs)
+        else:
+            return self.predict(source=source, stream=stream, **kwargs)
 
     def val(
         self,
