@@ -106,10 +106,10 @@ class Custom_Stream_Class:
                             frame = ctr.start_counting(frame, results) 
                         return frame
                     else:
-                        print("self.source4")
-                        # signal we're not running now
-                        print("cae en stop1")
-                        self.running = False
+                        # print("self.source4")
+                        # # signal we're not running now
+                        # print("cae en stop1")
+                        self.running = True
                         return None
                             # return self.default_img
             # else:

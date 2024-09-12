@@ -25,4 +25,4 @@ RUN pip install --trusted-host pypi.python.org -r requirements2.txt
 EXPOSE 5001
 EXPOSE 5000
 # Starting application
-ENTRYPOINT  ["python", "server.py"]
+ENTRYPOINT  ["python", "server2.py"]
