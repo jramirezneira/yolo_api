@@ -99,6 +99,7 @@ def status():
 def start():
     cv2DestroyAllWindows()
     url=request.args.get('url')
+    type=request.args.get('type')
     response = {'message': setProperty("statusServer",'loading')}
     print("pasa 6  %s" % url) 
 
@@ -109,7 +110,7 @@ def start():
         for obj in gc.get_objects():
             if isinstance(obj, Custom_Stream_Class):
                 # isnew=False                    
-                obj.change(url)
+                obj.change(url, type)
                 setProperty("statusServer",'active')
     except Exception as e:
         setProperty("statusServer","offline")
