@@ -1,37 +1,14 @@
 # import necessary libs
-import uvicorn, cv2
-from vidgear.gears.asyncio import WebGear_RTC
+import  cv2
 from vidgear.gears import NetGear, CamGear
-import os
 from ultralytics import YOLO
 from ultralytics.solutions import object_counter
 from utils.general import image_resize, getConfProperty, setProperty
 from urllib.parse import urlparse
-import gc
 import cv2
-import numpy as np
-import requests
 import torch
-from PIL import Image
-from ultralytics import FastSAM
-
-from ultralytics.data.augment import LetterBox
 from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
-from ultralytics.utils.checks import check_requirements
-
-# from patched_yolo_infer import (
-#     visualize_results_usual_yolo_inference,
-#     get_crops,
-#     Segment_Stream_Class
-# )
-
-# from patched_yolo_infer import (
-#     MakeCropsDetectThem,
-#     CombineDetections,
-#     visualize_results_usual_yolo_inference,
-#     visualize_results,
-# )
 from patched_yolo_infer.functions_extra import Segment_Stream_Class
 
 

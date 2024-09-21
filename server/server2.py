@@ -6,17 +6,9 @@ from flask_cors import CORS, cross_origin
 import gc
 from ultralytics.utils.ops import LOGGER
 import threading
-from ultralytics import YOLO
-from utils.stream_loaders import LoadImages, LoadStreamNoThread
-import time
 from utils.general import image_resize, getConfProperty, setProperty
 import cv2
-import boto3
 import torch
-import subprocess
-from subprocess import Popen
-import os
-# import socket
 import traceback
 from clientws3 import Custom_Stream_Class
 import uvicorn
@@ -26,10 +18,10 @@ from vidgear.gears.asyncio import WebGear_RTC
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
-model = YOLO("yolov8n.pt").to(device)
+# model = YOLO("yolov8n.pt").to(device)
 
 
-video, best, cap = None, None, None
+# video, best, cap = None, None, None
 
 
 # # activate multiclient_mode mode
