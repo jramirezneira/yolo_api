@@ -43,14 +43,14 @@ class Custom_Stream_Class:
         self.source=None
      
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        # self.model = YOLO("yolov8n.pt").to(self.device)
+        self.model = YOLO("YOLOv8n.pt").to(self.device)
         # self.model = YOLO("yolov8n-seg.pt").to(self.device)
         # self.model = FastSAM('FastSAM-x.pt')
-        self.model = YOLO("yolov8n-seg.pt")
+        self.modelSeg = YOLO("YOLOv8n-seg.pt").to(self.device)
         self.cv2= cv2 
         self.SourceType="yt"
         self.type="detection"
-        self.seg = Segment_Stream_Class (self.model)
+        self.seg = Segment_Stream_Class (self.modelSeg)
         # self.default_img = cv2.imread('logo512.png', 0) 
 
     def change(self, source=None, type="detection"):
