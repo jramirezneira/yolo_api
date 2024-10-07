@@ -15,6 +15,7 @@ from PIL import __version__ as pil_version
 from ultralytics.utils import LOGGER, TryExcept, ops, plt_settings, threaded
 from .checks import check_font, check_version, is_ascii
 from .files import increment_path
+import pyshine as ps
 
 
 class Colors:
@@ -387,18 +388,41 @@ class Annotator:
 
         text_x, text_y= reg_counts[0]
 
+     
+        
+
+
+        # y0, dy = text_y + t_size_in[1]+10, 25
+        # for index, stat in enumerate(counts):
+        #     y = y0 + index*dy
+        ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=tl /1.2,background_RGB=(255,250,250),text_RGB= (33, 33, 33), alpha=0.2, thickness=2)
+
         # Create a rounded rectangle for in_count
         cv2.rectangle(
             # self.im, (text_x - 5, text_y - 5), (text_x + text_width + 7, text_y + t_size_in[1] + 7), color, -1
-            self.im, reg_counts[0], reg_counts[1], color, -1
+            self.im, reg_counts[0], reg_counts[1], color,  cv2.FILLED
         )
 
+    
+
+        # Following line overlays transparent rectangle over the image
+        # image_new = cv2.addWeighted(overlay, alpha, self.im, 1 - alpha, 0)
+         
+       
         y0, dy = text_y + t_size_in[1]+10, 25
         for index, stat in enumerate(counts):
             y = y0 + index*dy
+            # ps.putBText(self.im,stat,text_offset_x=50,text_offset_y=120,vspace=10,hspace=10, font_scale=1.0,background_RGB=(0,250,250),text_RGB=(255,250,250))
+
             cv2.putText(            
                 self.im, stat, (text_x,  y), 0, tl / 1.5, txt_color, self.tf, lineType=cv2.LINE_AA
             )
+
+       
+        # alpha=0.5
+        # overlay = self.im.copy()
+   
+        # self.im = cv2.addWeighted(overlay, alpha, self.im, 1 - alpha, 0)
 
     def draw_text(img, text,
           font=cv2.FONT_HERSHEY_PLAIN,

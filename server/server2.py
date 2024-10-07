@@ -13,12 +13,13 @@ import traceback
 from clientws3 import Custom_Stream_Class
 import uvicorn
 from vidgear.gears.asyncio import WebGear_RTC
-
+from ultralytics import YOLO
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
-# model = YOLO("yolov8n.pt").to(device)
+model = YOLO("yolov8n.pt").to(device)
+modelSeg = YOLO("yolov8n-seg.pt").to(device)
 
 
 # video, best, cap = None, None, None
@@ -123,7 +124,7 @@ def stop():
     return jsonify(response)
 
 def service ():
-    options = {"custom_stream": Custom_Stream_Class()}
+    options = {"custom_stream": Custom_Stream_Class(model, modelSeg)}
 
     # initialize WebGear_RTC app without any source
     web = WebGear_RTC(logging=True, **options)

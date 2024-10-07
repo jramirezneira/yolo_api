@@ -15,15 +15,15 @@ from patched_yolo_infer.functions_extra import Segment_Stream_Class
 # create your own custom streaming class
 class Custom_Stream_Class:
 
-    def __init__(self):        
+    def __init__(self, model, modelSeg):        
         self.running = True
         self.source=None
      
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model = YOLO("YOLOv8n.pt").to(self.device)
+        self.model =model
         # self.model = YOLO("yolov8n-seg.pt").to(self.device)
         # self.model = FastSAM('FastSAM-x.pt')
-        self.modelSeg = YOLO("YOLOv8n-seg.pt").to(self.device)
+        self.modelSeg = modelSeg
         self.cv2= cv2 
         self.SourceType="yt"
         self.type="detection"
@@ -68,6 +68,7 @@ class Custom_Stream_Class:
                 if self.source is None:
                     break
                 self.countImg= self.countImg+1
+                # print(self.countImg)
                 frame =  self.source.read()     
                 
                 if self.countImg % self.stride == 0:   
