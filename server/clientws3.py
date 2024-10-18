@@ -1,8 +1,7 @@
 # import necessary libs
 import  cv2
-from vidgear.gears import NetGear, CamGear
-from ultralytics import YOLO
-from ultralytics.solutions import object_counter
+from vidgear.gears import  CamGear
+from utils.solutions import object_counter
 from utils.general import image_resize, getConfProperty, setProperty
 from urllib.parse import urlparse
 import cv2
@@ -10,7 +9,7 @@ import torch
 from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
 from patched_yolo_infer.functions_extra import Segment_Stream_Class
-
+import traceback
 
 # create your own custom streaming class
 class Custom_Stream_Class:
@@ -81,9 +80,15 @@ class Custom_Stream_Class:
                         if self.type=="detection":
                             dict_result=dict()
                             dict_result["verbose"] =False
-                            results = self.model.track(frame, persist=True, imgsz=640, show=False, **dict_result)                
-                            for ctr in self.counter:
-                                frame = ctr.start_counting(frame, results) 
+                            try:
+                                results = self.model.track(frame, persist=True,  imgsz=640,  show=False, **dict_result)                
+                                for ctr in self.counter:
+                                    frame = ctr.start_counting(frame, results) 
+                            except Exception as e:                                
+                                traceback.print_exception(type(e), e, e.__traceback__)
+
+                                           
+                            
                         else:
                             frame=self.seg.visualize_results_usual_yolo_inference(
                                 frame,

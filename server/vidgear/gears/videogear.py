@@ -171,7 +171,7 @@ class VideoGear:
         **Returns:** A n-dimensional numpy array.
         """
         while self.__stablization_mode:
-            frame = self.stream.read()
+            frame = self.stream.read()           
             if frame is None:
                 break
             frame_stab = self.__stabilizer_obj.stabilize(frame)
