@@ -12,14 +12,14 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # initialize WebGear_RTC app
 # dir_path+"\\test.mp4"
-# source="rtsp://79.117.17.231:554/11"
-# if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
-#     SourceType="yt"      
-# else:
-#     SourceType="rtsp"        
+source="rtsp://79.117.17.231:554/11"
+if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
+    SourceType="yt"      
+else:
+    SourceType="rtsp"        
 
-# options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1280, "CAP_PROP_FRAME_HEIGHT":720 }
-# stream = CamGear(source=source,  stream_mode=True if SourceType=="yt" else False,  logging=True, **options if SourceType=="yt" else {}).start()    
+options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1280, "CAP_PROP_FRAME_HEIGHT":720 }
+stream = CamGear(source=source,  stream_mode=True if SourceType=="yt" else False,  logging=True, **options if SourceType=="yt" else {}).start()    
 
 
 # define required FFmpeg parameters for your writer
@@ -28,22 +28,23 @@ output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}
 # Define writer with defined parameters and RTSP address
 # [WARNING] Change your RTSP address `rtsp://localhost:8554/mystream` with yours!
 writer = WriteGear(
-    output="rtsp://127.0.0.1:8554/mystream", logging=True, **output_params
+    output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params
 )
 
-cap = cv2.VideoCapture("rtsp://79.117.17.231:554/11")
 
 # loop over
 while True:
 
     # read frames from stream
-    ret, frame = cap.read()
+    frame = stream.read()
+    # check for frame if Nonetype
+    if frame is None:
+        break
    
-    if ret:
-        frame = image_resize(frame, height = 720)
-        cv2.imshow("RTSP View", frame)
-        writer.write(frame)
-        cv2.waitKey(1)
+    
+    frame = image_resize(frame, height = 720)
+    cv2.imshow("RTSP View", frame)
+    writer.write(frame)
 
 
 # safely close video stream

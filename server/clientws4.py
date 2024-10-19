@@ -1,68 +1,123 @@
-# import required libraries
-import uvicorn
-import os
-from vidgear.gears.asyncio import WebGear_RTC
+# import necessary libs
+import  cv2
+from vidgear.gears import  CamGear, WriteGear
+from utils.solutions import object_counter
+from utils.general import image_resize, getConfProperty, setProperty
+from urllib.parse import urlparse
+import cv2
+import torch
+from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
+from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
+from patched_yolo_infer.functions_extra import Segment_Stream_Class
+import traceback
 
-# various performance tweaks and enable live broadcasting
-options = {
-    "frame_size_reduction": 25,
-    "enable_live_broadcast": True,
-}
+# create your own custom streaming class
+class Custom_Stream_Class:
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+    def __init__(self, model, modelSeg):  
 
-# initialize WebGear_RTC app
-# dir_path+"\\test.mp4"
-web = WebGear_RTC(source="rtsp://localhost:8554/mystream", logging=True, **options)
+       
 
-# run this app on Uvicorn server at address http://0.0.0.0:8000/
-uvicorn.run(web(), host="0.0.0.0", port=8080)
+        self.running = True
+        self.source=None
+     
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model =model
+        # self.model = YOLO("yolov8n-seg.pt").to(self.device)
+        # self.model = FastSAM('FastSAM-x.pt')
+        self.modelSeg = modelSeg
+        self.cv2= cv2 
+        self.SourceType="yt"
+        self.type="detection"
+        self.seg = Segment_Stream_Class (self.modelSeg)
+        # self.default_img = cv2.imread('logo512.png', 0) 
 
-# close app safely
-web.shutdown()
+    def change(self, source=None, type="detection"):
 
-# from vidgear.gears import NetGear
-# import cv2
-
-# from ultralytics.utils.ops import LOGGER
-
-# # activate Multi-Clients mode
-# class Custom_Stream_Class:
-#     def __init__(self):   
-#         self.running = True
-#         self.source=None
-#         options = {"multiclient_mode": True}
-#         self.client = NetGear(
-#                             address="0.0.0.0",
-#                             port="5567",
-#                             protocol="tcp",
-#                             pattern=2,
-#                             receive_mode=True,
-#                             logging=True,
-#                             **options
-#                         ) 
-
-
-#     def read(self):
-#         cont=0
-#         while True:
-#             # receive data from server
-#             frame = self.client.recv()
-
-#             # check for frame if None
-#             if frame is None:
-#                 break
-                
-#             # im0 = cv2.imencode('.jpg', frame)[1].tobytes()
+        output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}     
     
-#         # # close output window
-#         cv2.destroyAllWindows()
+        self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params)
 
-#         # safely close client
-#         self.client.close()
+        self.type=type
+        if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
+            self.SourceType="yt"      
+        else:
+            self.SourceType="rtsp"        
 
-#     def close(self):
-#         self.client.close()
+        options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1280, "CAP_PROP_FRAME_HEIGHT":720 }
+        self.source = CamGear(source=source,  stream_mode=True if self.SourceType=="yt" else False,  logging=False, **options if self.SourceType=="yt" else {}).start()    
+   
 
+        self.counter=[]
+        region_points, self.stride =getConfProperty("region_points", "stride")
+        region_points_dict = [x for x in region_points if x['source'] == source and x['available'] == 1][0]
+        print("pasa 13")
+        for i, rp in enumerate(region_points_dict["region_points"]):
+            print("pasa i")
+            ctr= object_counter.ObjectCounter()
+            ctr.set_args(view_img=False,
+                        reg_pts=rp,
+                        classes_names=self.model.names,
+                        draw_tracks=True,
+                        reg_counts=region_points_dict["reg_counts"][i]
+                        )
+            print(i)
+            self.counter.append(ctr)
+        self.running = True
+        self.countImg=0    
+       
+        if self.running:
+            # read frame from provided source
+            while True:
+                if self.source is None:
+                    break
+                self.countImg= self.countImg+1
+                # print(self.countImg)
+                frame =  self.source.read()     
+                
+                if self.countImg % self.stride == 0:  
+                    if frame is None:
+                        break 
+                    # check if frame is available
+                    
+                    # cv2.imshow("RTSP View", frame)
+                    if self.SourceType=="rtsp":
+                        frame = image_resize(frame, height = 720)
 
+                    if self.type=="detection":
+                        dict_result=dict()
+                        dict_result["verbose"] =False
+                        try:
+                            results = self.model.track(frame, persist=True,  imgsz=640,  show=False, **dict_result)                
+                            for ctr in self.counter:
+                                frame = ctr.start_counting(frame, results) 
+                        except Exception as e:                                
+                            traceback.print_exception(type(e), e, e.__traceback__)
+                    else:
+                        frame=self.seg.visualize_results_usual_yolo_inference(
+                            frame,
+                            # self.model,
+                            # imgsz=720,
+                            conf=0.35,
+                            iou=0.7,
+                            segment=True,
+                            thickness=4,
+                            show_boxes=False,
+                            fill_mask=True,
+                            alpha=0.8,
+                            random_object_colors=False,
+                            # list_of_class_colors=[(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50)],
+                            show_class=True,
+                            dpi=150,
+                        return_image_array=True,)                    
+                    self.writer.write(frame)
+        self.writer.close()
+        return None
 
+    def stop(self):
+        self.running = False
+        print("cae en stop2")
+        # close stream
+        # if not self.source is None:
+        #     self.source.stop()
+        #     self.source.release()

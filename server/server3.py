@@ -68,6 +68,7 @@ def cv2DestroyAllWindows():
 
 setProperty("statusServer","offline")
 
+
 def region_points():
     input_dict, _=getConfProperty("region_points")
     output_dict = [x for x in input_dict if x['available'] == 1]
@@ -96,15 +97,21 @@ def start():
     response = {'message': setProperty("statusServer",'loading')}
     print("pasa 6  %s" % url) 
 
-    # isnew=True
+    instance=None
     
     # if isnew:
     try:
         for obj in gc.get_objects():
             if isinstance(obj, Custom_Stream_Class):
-                # isnew=False                    
-                obj.change(url, type)
-                setProperty("statusServer",'active')
+                instance=obj 
+                break                  
+        if instance is None:
+            instance=Custom_Stream_Class(model, modelSeg)
+
+        thrP = threading.Thread(target=instance.change,  args=(url, type), kwargs={})
+        thrP.start() 
+        # instance.change(url, type)
+        setProperty("statusServer",'active')
     except Exception as e:
         setProperty("statusServer","offline")
         cv2DestroyAllWindows()
@@ -145,8 +152,7 @@ if __name__ == '__main__':
 
     # thrP = threading.Thread(target=service,  args=(), kwargs={})
     # thrP.start()  
-    Custom_Stream_Class(model, modelSeg)
-
+    
     app.run(host="0.0.0.0", debug=False,  port=5001)
     
     
