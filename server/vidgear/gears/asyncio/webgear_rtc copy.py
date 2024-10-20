@@ -222,7 +222,6 @@ if not (aiortc is None):
             if hasattr(self, "_timestamp") and not self.__reset_enabled:
                 self._timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
                 wait = self._start + (self._timestamp / VIDEO_CLOCK_RATE) - time.time()
-                print(wait)
                 await asyncio.sleep(wait)
             else:
                 self.__logging and logger.debug(
@@ -299,7 +298,8 @@ if not (aiortc is None):
 
             try:
                 self.writer.write(f_stream)
-            except Exception as e:               
+            except Exception as e:
+               
                 traceback.print_exception(type(e), e, e.__traceback__)
             frame = VideoFrame.from_ndarray(f_stream, format=f_format)
             frame.pts = pts
@@ -323,7 +323,6 @@ if not (aiortc is None):
             """
             if not (self.__stream is None):
                 # terminate running flag
-                self.writer.close()
                 self.is_running = False
                 self.__logging and logger.debug("Terminating Internal RTC Video-Server")
                 # terminate
@@ -401,47 +400,47 @@ class WebGear_RTC:
         options = {str(k).strip(): v for k, v in options.items()}
 
         # assign values to global variables if specified and valid
-        # if options:
-        #     if "custom_data_location" in options:
-        #         value = options["custom_data_location"]
-        #         if isinstance(value, str):
-        #             assert os.access(
-        #                 value, os.W_OK
-        #             ), "[WebGear_RTC:ERROR] :: Permission Denied!, cannot write WebGear_RTC data-files to '{}' directory!".format(
-        #                 value
-        #             )
-        #             assert os.path.isdir(
-        #                 os.path.abspath(value)
-        #             ), "[WebGear_RTC:ERROR] :: `custom_data_location` value must be the path to a directory and not to a file!"
-        #             custom_data_location = os.path.abspath(value)
-        #         else:
-        #             logger.warning("Skipped invalid `custom_data_location` value!")
-        #         del options["custom_data_location"]  # clean
+        if options:
+            if "custom_data_location" in options:
+                value = options["custom_data_location"]
+                if isinstance(value, str):
+                    assert os.access(
+                        value, os.W_OK
+                    ), "[WebGear_RTC:ERROR] :: Permission Denied!, cannot write WebGear_RTC data-files to '{}' directory!".format(
+                        value
+                    )
+                    assert os.path.isdir(
+                        os.path.abspath(value)
+                    ), "[WebGear_RTC:ERROR] :: `custom_data_location` value must be the path to a directory and not to a file!"
+                    custom_data_location = os.path.abspath(value)
+                else:
+                    logger.warning("Skipped invalid `custom_data_location` value!")
+                del options["custom_data_location"]  # clean
 
-        #     if "overwrite_default_files" in options:
-        #         value = options["overwrite_default_files"]
-        #         if isinstance(value, bool):
-        #             overwrite_default = value
-        #         else:
-        #             logger.warning("Skipped invalid `overwrite_default_files` value!")
-        #         del options["overwrite_default_files"]  # clean
+            if "overwrite_default_files" in options:
+                value = options["overwrite_default_files"]
+                if isinstance(value, bool):
+                    overwrite_default = value
+                else:
+                    logger.warning("Skipped invalid `overwrite_default_files` value!")
+                del options["overwrite_default_files"]  # clean
 
-        #     if "enable_live_broadcast" in options:
-        #         value = options["enable_live_broadcast"]
-        #         if isinstance(value, bool):
-        #             if value:
-        #                 self.__relay = MediaRelay()
-        #                 options[
-        #                     "enable_infinite_frames"
-        #                 ] = True  # enforce infinite frames
-        #                 logger.critical(
-        #                     "Enabled live broadcasting for Peer connection(s)."
-        #                 )
-        #             else:
-        #                 None
-        #         else:
-        #             logger.warning("Skipped invalid `enable_live_broadcast` value!")
-        #         del options["enable_live_broadcast"]  # clean
+            if "enable_live_broadcast" in options:
+                value = options["enable_live_broadcast"]
+                if isinstance(value, bool):
+                    if value:
+                        self.__relay = MediaRelay()
+                        options[
+                            "enable_infinite_frames"
+                        ] = True  # enforce infinite frames
+                        logger.critical(
+                            "Enabled live broadcasting for Peer connection(s)."
+                        )
+                    else:
+                        None
+                else:
+                    logger.warning("Skipped invalid `enable_live_broadcast` value!")
+                del options["enable_live_broadcast"]  # clean
 
         # check if custom certificates path is specified
         if custom_data_location:

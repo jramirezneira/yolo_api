@@ -36,7 +36,7 @@ class Custom_Stream_Class:
 
         output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}     
     
-        self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params)
+        self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=False, **output_params)
 
         self.type=type
         if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
@@ -75,7 +75,7 @@ class Custom_Stream_Class:
                 # print(self.countImg)
                 frame =  self.source.read()     
                 
-                if self.countImg % self.stride == 0:  
+                if self.countImg % 4 == 0:  
                     if frame is None:
                         break 
                     # check if frame is available
@@ -86,7 +86,7 @@ class Custom_Stream_Class:
 
                     if self.type=="detection":
                         dict_result=dict()
-                        dict_result["verbose"] =False
+                        dict_result["verbose"] =True
                         try:
                             results = self.model.track(frame, persist=True,  imgsz=640,  show=False, **dict_result)                
                             for ctr in self.counter:

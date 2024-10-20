@@ -10,10 +10,15 @@ from utils.general import image_resize, getConfProperty, setProperty
 import cv2
 import torch
 import traceback
-from clientws4 import Custom_Stream_Class
+from clientws3 import Custom_Stream_Class
 import uvicorn
 from vidgear.gears.asyncio import WebGear_RTC
 from ultralytics import YOLO
+import asyncio
+import time
+from vidgear.gears import   WriteGear
+from vidgear.gears.helper import  create_blank_frame
+import numpy as np
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -123,19 +128,54 @@ def stop():
     print("pasa 8") 
     return jsonify(response)
 
-def service ():
-    options = {"custom_stream": Custom_Stream_Class(model, modelSeg)}
-    # options = {"custom_stream": Custom_Stream_Class()}
+def between_callback():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-    # initialize WebGear_RTC app without any source
-    # web = WebGear_RTC(source="rtsp://127.0.0.1:8554/mystream", logging=True)#, **options)
-    web = WebGear_RTC( logging=True, **options)
+    loop.run_until_complete(service())
+    loop.close()
 
-    # run this app on Uvicorn server at address http://localhost:8080/
-    uvicorn.run(web(), host="0.0.0.0", port=5000)
+async def service ():
+
+    output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}     
+    
+    writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params)
+    _start = time.time()
+    _timestamp = 0
+    VIDEO_CLOCK_RATE = 90000
+    VIDEO_PTIME = 1 / 30  # 30fps
+    cl=Custom_Stream_Class(model, modelSeg)
+    blank_frame=np.zeros([720,1280,3],dtype=np.uint8)
+    black_frame=blank_frame[:]
+    black_frame=create_blank_frame(frame=black_frame, text="")
+
+    while True:
+        _timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
+        wait = _start + (_timestamp / VIDEO_CLOCK_RATE) - time.time()
+        # print(wait)
+        await asyncio.sleep(wait)
+        frame=cl.read()
+        if frame is None:
+            frame=black_frame    
+        if frame is not None:    
+            try:
+                writer.write(frame)
+            except Exception as e:               
+                traceback.print_exception(type(e), e, e.__traceback__)
+        
+
+    # options = {"custom_stream": Custom_Stream_Class(model, modelSeg)}
+    # # options = {"custom_stream": Custom_Stream_Class()}
+
+    # # initialize WebGear_RTC app without any source
+    # # web = WebGear_RTC(source="rtsp://127.0.0.1:8554/mystream", logging=True)#, **options)
+    # web = WebGear_RTC( logging=True, **options)
+
+    # # run this app on Uvicorn server at address http://localhost:8080/
+    # uvicorn.run(web(), host="0.0.0.0", port=5000)
 
     # close app safely
-    web.shutdown()
+    # web.shutdown()
 
 
 
@@ -143,9 +183,9 @@ def service ():
 
 if __name__ == '__main__':
 
-    # thrP = threading.Thread(target=service,  args=(), kwargs={})
-    # thrP.start()  
-    Custom_Stream_Class(model, modelSeg)
+    thrP = threading.Thread(target=between_callback,  args=(), kwargs={})
+    thrP.start()  
+    # Custom_Stream_Class(model, modelSeg)
 
     app.run(host="0.0.0.0", debug=False,  port=5001)
     

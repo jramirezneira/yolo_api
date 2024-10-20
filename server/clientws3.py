@@ -27,6 +27,8 @@ class Custom_Stream_Class:
         self.SourceType="yt"
         self.type="detection"
         self.seg = Segment_Stream_Class (self.modelSeg)
+        self.countImg=0  
+        self.stride=4 
         # self.default_img = cv2.imread('logo512.png', 0) 
 
     def change(self, source=None, type="detection"):
