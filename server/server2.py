@@ -17,7 +17,7 @@ from ultralytics import YOLO
 import asyncio
 import time
 from vidgear.gears import   WriteGear
-from vidgear.gears.helper import  create_blank_frame
+from vidgear.gears.helper import  create_blank_frame, reducer, retrieve_best_interpolation
 import numpy as np
 
 
@@ -148,6 +148,11 @@ async def service ():
     blank_frame=np.zeros([720,1280,3],dtype=np.uint8)
     black_frame=blank_frame[:]
     black_frame=create_blank_frame(frame=black_frame, text="")
+    __frame_size_reduction = 50  # 20% reduction
+            # retrieve interpolation for reduction
+    __interpolation = retrieve_best_interpolation(
+        ["INTER_LINEAR_EXACT", "INTER_LINEAR", "INTER_AREA"]
+    )
 
     while True:
         _timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
@@ -156,10 +161,16 @@ async def service ():
         await asyncio.sleep(wait)
         frame=cl.read()
         if frame is None:
-            frame=black_frame    
-        if frame is not None:    
+            frame=black_frame   
+
+        f_stream = reducer(
+                    frame,
+                    percentage=__frame_size_reduction,
+                    interpolation=__interpolation,
+                ) 
+        if f_stream is not None:    
             try:
-                writer.write(frame)
+                writer.write(f_stream)
             except Exception as e:               
                 traceback.print_exception(type(e), e, e.__traceback__)
         
