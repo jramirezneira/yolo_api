@@ -5,26 +5,19 @@ from flask import Flask, jsonify, request, Response
 from flask_cors import CORS, cross_origin
 import gc
 from ultralytics.utils.ops import LOGGER
-import threading
 from utils.general import image_resize, getConfProperty, setProperty
 import cv2
 import torch
 import traceback
 from clientws3 import Custom_Stream_Class
-import uvicorn
 from vidgear.gears.asyncio import WebGear_RTC
 from ultralytics import YOLO
 import asyncio
-import time
-from vidgear.gears import   WriteGear
-from vidgear.gears.helper import  create_blank_frame, reducer, retrieve_best_interpolation
-import numpy as np
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
-model = YOLO("yolo11n.pt").to(device)
-modelSeg = YOLO("yolo11x-seg.pt").to(device)
+
 
 
 # video, best, cap = None, None, None
@@ -39,35 +32,34 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
-
-
 def cv2DestroyAllWindows():    
-    cv2.destroyAllWindows()
-    # setProperty("statusServer","offline")
-            
+    # cv2.destroyAllWindows()
     
     for obj in gc.get_objects():
-        # if isinstance(obj, CamGear):
-        #     try:
-        #         obj.stop()
-        #     except Exception as e:
-        #         LOGGER.error("An exception occurred in CamGear.stop() : %s" % e)
 
         if isinstance(obj, Custom_Stream_Class):
             try:
-                obj.source.stop()
+                obj.stop()
             except Exception as e:
                 LOGGER.error("An exception occurred in source.stop() : %s" % e)
-
-            try:
-                obj.source.release()
-            except Exception as e:
-                LOGGER.error("An exception occurred in source.release() : %s" % e)
-
+           
             try:  
                 obj.cv2.destroyAllWindows()                   
             except Exception as e:
                 LOGGER.info("close obj.cv2.destroyAllWindows %s " % e)
+            
+            try:  
+                obj.thrP.join()                   
+            except Exception as e:
+                LOGGER.info("close obj.thrP.join() %s " % e)
+
+            try:
+                del obj
+            except Exception as e:
+                LOGGER.error("An exception occurred in del obj : %s" % e)
+
+
+            
     
 
 
@@ -95,21 +87,45 @@ def status():
 @app.route('/api/start', methods=['GET'])
 @cross_origin()
 def start():
-    cv2DestroyAllWindows()
-    url=request.args.get('url')
-    type=request.args.get('type')
-    response = {'message': setProperty("statusServer",'loading')}
-    print("pasa 6  %s" % url) 
-
-    # isnew=True
-    
-    # if isnew:
     try:
+        # cv2DestroyAllWindows()
+        sourceVideo=request.args.get('url')
+        type=request.args.get('type')
+        stride=int(request.args.get('stride'))
+        model_input=request.args.get('model')
+        response = {'message': setProperty("statusServer",'loading')}
+
+        instance=None
+        isNew=True
+    
         for obj in gc.get_objects():
             if isinstance(obj, Custom_Stream_Class):
-                # isnew=False                    
-                obj.change(url, type)
-                setProperty("statusServer",'active')
+                instance=obj     
+                isNew=False            
+                break                  
+        if instance is None:
+            instance=Custom_Stream_Class()
+
+        if instance.stride != stride:
+            LOGGER.info("Cambia stride : %s" % stride)
+            instance.setStride(stride)
+        
+        if instance.modelName != model_input:
+            model = YOLO(model_input).to(device)
+            LOGGER.info("Carga modelo : %s" % model_input)
+            instance.setModel(model, model_input)
+        
+        if instance.type != type:
+            LOGGER.info("Cambia type : %s" % type)
+            instance.setType(type)
+
+        if instance.sourceVideo != sourceVideo:
+            if isNew == False:
+                obj.restart()
+            LOGGER.info("Cambia source : %s" % sourceVideo)
+            instance.setVideo(sourceVideo)
+        setProperty("statusServer",'active')
+
     except Exception as e:
         setProperty("statusServer","offline")
         cv2DestroyAllWindows()
@@ -128,52 +144,9 @@ def stop():
     print("pasa 8") 
     return jsonify(response)
 
-def between_callback():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
 
-    loop.run_until_complete(service())
-    loop.close()
 
-async def service ():
 
-    output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}     
-    
-    writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params)
-    _start = time.time()
-    _timestamp = 0
-    VIDEO_CLOCK_RATE = 90000
-    VIDEO_PTIME = 1 / 30  # 30fps
-    cl=Custom_Stream_Class(model, modelSeg)
-    blank_frame=np.zeros([720,1280,3],dtype=np.uint8)
-    black_frame=blank_frame[:]
-    black_frame=create_blank_frame(frame=black_frame, text="")
-    __frame_size_reduction = 50  # 20% reduction
-            # retrieve interpolation for reduction
-    __interpolation = retrieve_best_interpolation(
-        ["INTER_LINEAR_EXACT", "INTER_LINEAR", "INTER_AREA"]
-    )
-
-    while True:
-        _timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
-        wait = _start + (_timestamp / VIDEO_CLOCK_RATE) - time.time()
-        # print(wait)
-        await asyncio.sleep(wait)
-        frame=cl.read()
-        if frame is None:
-            frame=black_frame   
-
-        f_stream = reducer(
-                    frame,
-                    percentage=__frame_size_reduction,
-                    interpolation=__interpolation,
-                ) 
-        if f_stream is not None:    
-            try:
-                writer.write(f_stream)
-            except Exception as e:               
-                traceback.print_exception(type(e), e, e.__traceback__)
-        
 
     # options = {"custom_stream": Custom_Stream_Class(model, modelSeg)}
     # # options = {"custom_stream": Custom_Stream_Class()}
@@ -194,9 +167,10 @@ async def service ():
 
 if __name__ == '__main__':
 
-    thrP = threading.Thread(target=between_callback,  args=(), kwargs={})
-    thrP.start()  
+    
     # Custom_Stream_Class(model, modelSeg)
+    # thrP = threading.Thread(target=between_callback,  args=(), kwargs={})
+    # thrP.start()  
 
     app.run(host="0.0.0.0", debug=False,  port=5001)
     

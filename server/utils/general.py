@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import json # Henry
 import boto3
-
+import socket
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv8API root directory
@@ -101,3 +101,4 @@ def update_options(request):
     # save_txt = False   
     
     return source, save_txt#, s3_folder
+
