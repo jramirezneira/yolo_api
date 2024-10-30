@@ -22,7 +22,7 @@ class Custom_Stream_Class:
     def __init__(self, stride=4):        
         self.running = True
         self.source, self.thrP, self.model, self.modelName, self.type, self.stride, self.sourceVideo =None, None, None, None, None, None, None
-        self.seg = None
+        self.seg, self.start = None, None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
       
         # self.model = YOLO("yolov8n-seg.pt").to(self.device)
@@ -34,39 +34,39 @@ class Custom_Stream_Class:
         # self.setModel(model)
         self.setStride(stride)
         # self.seg = Segment_Stream_Class (self.model)
-        self.countImg=0  
-        
+        self.countImg=0 
         # self.stride=stride
         # self.wait=self.getWaitFrame()
         output_params = {"-f": "rtsp", "-rtsp_transport": "tcp", "-bufsize":"100k"}     
         
-        self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params)
+        self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=False, **output_params)
         self.thrP = threading.Thread(target=self.between_callback,  args=(), kwargs={})
         self.thrP.start()
         
         # self.default_img = cv2.imread('logo512.png', 0) 
     def setStride(self, stride):
         self.stride=stride
-        self.wait= self.getWaitFrame()
+        self.start = time.time()
+        self.timestamp=0
+        # self.wait= self.getWaitFrame()
 
-    def setType(self, type):
-        self.type=type
-
-    def setModel(self, model, modelName):
+ 
+    def setModelAndType(self, model, modelName, type):
         self.model=model
         self.modelName=modelName
-        if self.type=="segmentation":
+        if type=="segmentation":
             self.seg = Segment_Stream_Class (self.model)
+        self.type=type
 
 
-    def getWaitFrame(self):
-        _start = time.time()
-        _timestamp = 0
-        VIDEO_CLOCK_RATE = 90000
-        fps=30/ self.stride
-        VIDEO_PTIME = 1 / fps  # 30fps
-        _timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
-        return _start + (_timestamp / VIDEO_CLOCK_RATE) - time.time()
+    # def getWaitFrame(self):
+    #     _start = time.time()
+    #     _timestamp = 0
+    #     VIDEO_CLOCK_RATE = 90000
+    #     fps=30/ self.stride
+    #     VIDEO_PTIME = 1 / fps  # 30fps
+    #     _timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
+    #     return _start + (_timestamp / VIDEO_CLOCK_RATE) - time.time()
 
 
     def setVideo(self, sourceVideo=None):
@@ -75,7 +75,7 @@ class Custom_Stream_Class:
         self.running = True
         region_points, _ =getConfProperty("region_points")  
         
-        self.wait=self.getWaitFrame()
+        # self.wait=self.getWaitFrame()
 
         # self.type=type
         if urlparse(self.sourceVideo).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
@@ -104,6 +104,8 @@ class Custom_Stream_Class:
             self.counter.append(ctr)
         
         self.countImg=0    
+        self.start = time.time()
+        self.timestamp=0
         
         
 
@@ -185,12 +187,15 @@ class Custom_Stream_Class:
         loop.close()
 
     async def service (self):
-        
+       
+       
+        VIDEO_CLOCK_RATE = 90000
+        self.timestamp=0
         
         # cl=Custom_Stream_Class(model, modelSeg)
         blank_frame=np.zeros([720,1280,3],dtype=np.uint8)
         black_frame=blank_frame[:]
-        black_frame=create_blank_frame(frame=black_frame, text="xxxxxx")
+        black_frame=create_blank_frame(frame=black_frame, text="")
         __frame_size_reduction = 5  # 20% reduction
                 # retrieve interpolation for reduction
         __interpolation = retrieve_best_interpolation(
@@ -198,14 +203,21 @@ class Custom_Stream_Class:
         )
 
         while True:
-            
-            if self.running==False:
-                break       
-            if self.source is None:
-                frame=black_frame     
-            # print(wait)
-            await asyncio.sleep(self.wait)
-            try:
+            try:    
+                if self.running==False:
+                    break       
+                if self.source is None:
+                    frame=black_frame     
+                # print(wait)
+                fps=30/ self.stride
+                VIDEO_PTIME = 1 / fps  # 30fps
+                self.timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
+                print(self.start)
+                wait= self.start + (self.timestamp / VIDEO_CLOCK_RATE) - time.time()
+                print(wait)
+
+                await asyncio.sleep(wait)
+              
                 frame=self.read()
                 if frame is None:
                     frame=black_frame   

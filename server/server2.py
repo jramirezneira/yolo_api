@@ -110,14 +110,12 @@ def start():
             LOGGER.info("Cambia stride : %s" % stride)
             instance.setStride(stride)
         
-        if instance.modelName != model_input:
+        if instance.modelName != model_input or instance.type != type:
             model = YOLO(model_input).to(device)
-            LOGGER.info("Carga modelo : %s" % model_input)
-            instance.setModel(model, model_input)
-        
-        if instance.type != type:
             LOGGER.info("Cambia type : %s" % type)
-            instance.setType(type)
+            LOGGER.info("Carga modelo : %s" % model_input)
+            instance.setModelAndType(model, model_input, type)       
+        
 
         if instance.sourceVideo != sourceVideo:
             if isNew == False:
