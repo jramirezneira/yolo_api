@@ -12,7 +12,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # initialize WebGear_RTC app
 # dir_path+"\\test.mp4"
-source="rtsp://79.117.17.231:554/11"
+source="https://www.youtube.com/watch?v=yHBXsm2H8gs"
 if urlparse(source).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
     SourceType="yt"      
 else:
@@ -27,10 +27,15 @@ output_params = {"-f": "rtsp", "-rtsp_transport": "tcp"}
 
 # Define writer with defined parameters and RTSP address
 # [WARNING] Change your RTSP address `rtsp://localhost:8554/mystream` with yours!
-writer = WriteGear(
-    output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params
+# writer = WriteGear(
+#     output="rtsp://0.0.0.0:8554/mystream", logging=True, **output_params
+# )
+fps = 30
+w = 1280
+h = 720
+vid_writer = cv2.VideoWriter(
+    "save_pah.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h)
 )
-
 
 # loop over
 while True:
@@ -43,15 +48,17 @@ while True:
    
     
     frame = image_resize(frame, height = 720)
-    cv2.imshow("RTSP View", frame)
-    writer.write(frame)
+    # cv2.imshow("RTSP View", frame)
+    
+
+    vid_writer.write(frame)
 
 
 # safely close video stream
 stream.stop()
 
 # safely close writer
-writer.close()
+vid_writer.release()
 
 # # from inference import InferencePipeline
 # # from inference.core.interfaces.stream.sinks import render_boxes

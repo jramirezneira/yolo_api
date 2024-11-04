@@ -40,6 +40,25 @@ class Custom_Stream_Class:
         output_params = {"-f": "rtsp", "-rtsp_transport": "tcp", "-bufsize":"100k"}     
         
         self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=False, **output_params)
+        # output_params = {
+        #     "-clones": ["-f", "lavfi", "-i", "anullsrc"],
+        #     "-vcodec": "libx264",
+        #     "-preset": "medium",
+        #     "-b:v": "4500k",
+        #     "-bufsize": "512k",
+        #     "-pix_fmt": "yuv420p",
+        #     "-f": "flv",
+        # }
+
+
+
+        # YOUTUBE_STREAM_KEY = "phbq-55ve-tah4-h6jk-a29q"
+
+        # self.writer = WriteGear(
+        #     output="rtmp://a.rtmp.youtube.com/live2/{}".format(YOUTUBE_STREAM_KEY),
+        #     logging=False,
+        #     **output_params
+        # )
         self.thrP = threading.Thread(target=self.between_callback,  args=(), kwargs={})
         self.thrP.start()
         
@@ -201,20 +220,20 @@ class Custom_Stream_Class:
         __interpolation = retrieve_best_interpolation(
             ["INTER_LINEAR_EXACT", "INTER_LINEAR", "INTER_AREA"]
         )
-
+        youtube=False
         while True:
             try:    
                 if self.running==False:
                     break       
                 if self.source is None:
-                    frame=black_frame     
+                    frame=black_frame  
+                else:
+                    youtube=True   
                 # print(wait)
                 fps=30/ self.stride
                 VIDEO_PTIME = 1 / fps  # 30fps
                 self.timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
-                print(self.start)
                 wait= self.start + (self.timestamp / VIDEO_CLOCK_RATE) - time.time()
-                print(wait)
 
                 await asyncio.sleep(wait)
               
@@ -227,8 +246,17 @@ class Custom_Stream_Class:
                             percentage=__frame_size_reduction,
                             interpolation=__interpolation,
                         ) 
-                if f_stream is not None:                        
-                        self.writer.write(f_stream)
+                # if f_stream is not None and youtube:  
+                if f_stream is not None:                      
+                    self.writer.write(f_stream)
+
+               
+              
+                    
+                vid_writer = cv2.VideoWriter(
+                "output.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (640, 480)
+                )
+                vid_writer.write(f_stream)
             except Exception as e:          
                 self.running=False
                 LOGGER.error("An exception occurred in service : %s" % e)     
