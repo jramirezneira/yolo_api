@@ -10,7 +10,7 @@ options = {
     #  "enable_live_broadcast": True,
 }
 
-rtspServer= "192.168.1.167"#, _ =getConfProperty("rtspServer") 
+rtspServer= "127.0.0.1"#, _ =getConfProperty("rtspServer") 
 web =None
 
 def openStreamRtspServer():
