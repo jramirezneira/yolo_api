@@ -2,7 +2,7 @@
 import uvicorn
 import time
 from vidgear.gears.asyncio import WebGear_RTC
-from utils.general import image_resize, getConfProperty, setProperty
+# from utils.general import image_resize, getConfProperty, setProperty
 
 # various performance tweaks and enable live broadcasting
 options = {
@@ -10,7 +10,7 @@ options = {
     #  "enable_live_broadcast": True,
 }
 
-rtspServer, _ =getConfProperty("rtspServer") 
+rtspServer= "192.168.1.167"#, _ =getConfProperty("rtspServer") 
 web =None
 
 def openStreamRtspServer():
