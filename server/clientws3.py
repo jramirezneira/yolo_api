@@ -37,9 +37,11 @@ class Custom_Stream_Class:
         self.countImg=0 
         # self.stride=stride
         # self.wait=self.getWaitFrame()
-        output_params = {"-f": "rtsp", "-rtsp_transport": "tcp", "-bufsize":"100k"}     
+        output_params = {"-f": "rtsp", "-rtsp_transport": "tcp", "-bufsize":"100k"}   
+
+        rtspServer, _ =getConfProperty("rtspServer")  
         
-        self.writer = WriteGear(output="rtsp://192.168.1.167:8554/mystream", logging=False, **output_params)
+        self.writer = WriteGear(output="rtsp://%s:8554/mystream" % rtspServer, logging=False, **output_params)
         # output_params = {
         #     "-clones": ["-f", "lavfi", "-i", "anullsrc"],
         #     "-vcodec": "libx264",
