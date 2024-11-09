@@ -163,13 +163,8 @@ def generate_webdata(path, c_name="webgear", overwrite_default=False, logging=Fa
         path = os.path.join(path, ".vidgear")
 
     # generate parent directory
-    # path = os.path.join(path, c_name)
-   
-
-    path = os.path.dirname(os.path.realpath(__file__))
-    path= path+'/webgear_rtc/'
+    path = os.path.join(path, c_name)
     mkdir_safe(path, logging=logging)
-   
 
     # self-generate dirs
     template_dir = os.path.join(path, "templates")  # generates HTML templates dir

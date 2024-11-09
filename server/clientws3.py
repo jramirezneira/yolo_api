@@ -9,7 +9,7 @@ import cv2
 import torch
 from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
-from patched_yolo_infer.functions_extra import Segment_Stream_Class
+from server.patched_yolo_infer.functions_extra import Segment_Stream_Class
 import traceback
 import threading
 import asyncio
@@ -39,7 +39,7 @@ class Custom_Stream_Class:
         # self.wait=self.getWaitFrame()
         output_params = {"-f": "rtsp", "-rtsp_transport": "tcp", "-bufsize":"100k"}     
         
-        self.writer = WriteGear(output="rtsp://0.0.0.0:8554/mystream", logging=False, **output_params)
+        self.writer = WriteGear(output="rtsp://192.168.1.167:8554/mystream", logging=False, **output_params)
         # output_params = {
         #     "-clones": ["-f", "lavfi", "-i", "anullsrc"],
         #     "-vcodec": "libx264",
@@ -215,20 +215,20 @@ class Custom_Stream_Class:
         blank_frame=np.zeros([720,1280,3],dtype=np.uint8)
         black_frame=blank_frame[:]
         black_frame=create_blank_frame(frame=black_frame, text="")
-        __frame_size_reduction = 5  # 20% reduction
+        __frame_size_reduction = 20  # 20% reduction
                 # retrieve interpolation for reduction
         __interpolation = retrieve_best_interpolation(
             ["INTER_LINEAR_EXACT", "INTER_LINEAR", "INTER_AREA"]
         )
-        youtube=False
+        # youtube=False
         while True:
             try:    
                 if self.running==False:
                     break       
                 if self.source is None:
                     frame=black_frame  
-                else:
-                    youtube=True   
+                # else:
+                #     youtube=True   
                 # print(wait)
                 fps=30/ self.stride
                 VIDEO_PTIME = 1 / fps  # 30fps
@@ -250,13 +250,6 @@ class Custom_Stream_Class:
                 if f_stream is not None:                      
                     self.writer.write(f_stream)
 
-               
-              
-                    
-                vid_writer = cv2.VideoWriter(
-                "output.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (640, 480)
-                )
-                vid_writer.write(f_stream)
             except Exception as e:          
                 self.running=False
                 LOGGER.error("An exception occurred in service : %s" % e)     

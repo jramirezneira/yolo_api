@@ -1,15 +1,15 @@
 # import required libraries
+from utils.general import image_resize, getConfProperty, setProperty
 from vidgear.gears import NetGear, CamGear
 import json
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS, cross_origin
 import gc
 from ultralytics.utils.ops import LOGGER
-from utils.general import image_resize, getConfProperty, setProperty
 import cv2
 import torch
 import traceback
-from clientws3 import Custom_Stream_Class
+from server.clientws3 import Custom_Stream_Class
 from vidgear.gears.asyncio import WebGear_RTC
 from ultralytics import YOLO
 import asyncio
@@ -136,9 +136,10 @@ def start():
 @app.route('/api/stop', methods=['GET'])
 @cross_origin()
 def stop():    
+    response = {'message': setProperty("statusServer",'offline')}
     print("pasa 7") 
     cv2DestroyAllWindows()
-    response = {'message': setProperty("statusServer",'offline')}
+    
     print("pasa 8") 
     return jsonify(response)
 
