@@ -7,7 +7,7 @@ from vidgear.gears.asyncio import WebGear_RTC
 # various performance tweaks and enable live broadcasting
 options = {
     "frame_size_reduction": 25,
-    #  "enable_live_broadcast": True,
+      "enable_live_broadcast": True,
 }
 
 rtspServer= "127.0.0.1"#, _ =getConfProperty("rtspServer") 
