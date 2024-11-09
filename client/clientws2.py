@@ -1,5 +1,6 @@
 # import required libraries
 import uvicorn
+import time
 from vidgear.gears.asyncio import WebGear_RTC
 from utils.general import image_resize, getConfProperty, setProperty
 
@@ -10,9 +11,19 @@ options = {
 }
 
 rtspServer, _ =getConfProperty("rtspServer") 
+web =None
 
-# initialize WebGear_RTC app
-web = WebGear_RTC(source="rtsp://%s:8554/mystream" % rtspServer, logging=True, **options)
+def openStreamRtspServer():
+    while True:
+        try:
+            # initialize WebGear_RTC app
+            return WebGear_RTC(source="rtsp://%s:8554/mystream" % rtspServer, logging=True, **options)   
+            
+        except  Exception:
+                print("Retrying connection to rtsp server, in ",str(1.5), " seconds...")
+                time.sleep(1.5)
+
+web=openStreamRtspServer()
 
 # run this app on Uvicorn server at address http://0.0.0.0:8000/
 uvicorn.run(web(), host="0.0.0.0", port=5000)
