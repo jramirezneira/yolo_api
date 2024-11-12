@@ -24,7 +24,7 @@ import time
 import queue
 import logging as log
 from threading import Thread, Event
-from utils.general import getConfProperty
+# from utils.general import getConfProperty
 
 # import helper packages
 from .helper import (
@@ -81,7 +81,7 @@ if not (yt_dlp is None):
             # assign source_url
             self.source_url = source_url
 
-            proxy, _=getConfProperty("proxy")
+            # proxy, _=getConfProperty("proxy")
 
             # define default options for yt-dlp backend
             self.ydl_opts = {
@@ -92,7 +92,7 @@ if not (yt_dlp is None):
                 "dump_single_json": True,
                 "extract_flat": True,
                 "skip_download": True,
-				"proxy":proxy,
+				# "proxy":proxy,
                 "update-to": "nightly"
 
             }

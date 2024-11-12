@@ -63,7 +63,7 @@ logger.setLevel(log.DEBUG)
 
 # add global vars
 VIDEO_CLOCK_RATE = 90000
-VIDEO_PTIME = 1 / 30  # 30fps
+VIDEO_PTIME = 1 / 15  # 30fps
 VIDEO_TIME_BASE = fractions.Fraction(1, VIDEO_CLOCK_RATE)
 
 aiortc = import_dependency_safe("aiortc", error="silent")
@@ -215,7 +215,9 @@ if not (aiortc is None):
             if hasattr(self, "_timestamp") and not self.__reset_enabled:
                 self._timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
                 wait = self._start + (self._timestamp / VIDEO_CLOCK_RATE) - time.time()
+                # print(wait)
                 await asyncio.sleep(wait)
+                
             else:
                 self.__logging and logger.debug(
                     "{} timestamps".format(
@@ -235,6 +237,7 @@ if not (aiortc is None):
             """
             # get next time-stamp
             pts, time_base = await self.next_timestamp()
+            
 
             # read video frame
             f_stream = None
@@ -242,6 +245,7 @@ if not (aiortc is None):
                 raise MediaStreamError
             else:
                 f_stream = self.__stream.read()
+                print(f_stream.size)
 
             # display blank if NoneType
             if f_stream is None:
@@ -249,9 +253,9 @@ if not (aiortc is None):
                     raise MediaStreamError
                 else:
                     f_stream = self.blank_frame[:]
-                # if not self.__enable_inf and not self.__reset_enabled:
-                #     self.__logging and logger.debug("Video-Stream Ended.")
-                    # self.terminate()
+                if not self.__enable_inf and not self.__reset_enabled:
+                    self.__logging and logger.debug("Video-Stream Ended.")
+                    self.terminate()
             else:
                 # create blank
                 if self.blank_frame is None:
