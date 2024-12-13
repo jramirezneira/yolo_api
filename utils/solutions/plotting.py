@@ -368,7 +368,7 @@ class Annotator:
     
    
 
-    def count_labels(self, counts=0, count_txt_size=1, color=(255, 255, 255), txt_color=(0, 0, 0), reg_counts=None):
+    def count_labels(self, countsIn=None, countsOut=None, count_txt_size=1, color=(255, 255, 255), txt_color=(0, 0, 0), reg_counts=None):
         """
         Plot counts for object counter.
 
@@ -383,7 +383,7 @@ class Annotator:
         tf = max(tl - 1, 1)
 
         # Get text size for in_count and out_count
-        font_scale=tl / 1
+        font_scale=tl / 2.5
         font=cv2.FONT_HERSHEY_DUPLEX
         thickness=1
         # (text_width, text_height) = cv2.getTextSize(text, font, fontScale=font_scale, thickness=thickness)[0]
@@ -418,10 +418,22 @@ class Annotator:
 
          # if isnew:
         try:
-            y0, dy = text_y + 22, 30
-            for index, stat in enumerate(counts):
-                y = y0 + index*dy
-                ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=font_scale,font=font, background_RGB=color, text_RGB=txt_color, alpha=0.2, thickness=thickness)
+            y0, dy = text_y + 22, 20
+            y=0
+            if countsIn:
+                for index, stat in enumerate(countsIn):
+                    y = y0 + index+1*dy
+                    # if index ==0:  
+                    ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=font_scale,font=font, background_RGB=color, text_RGB=txt_color, alpha=0.2, thickness=thickness)
+            
+            if countsOut:
+                for index, stat in enumerate(countsOut):
+                    y0=y
+                    y = y0 + (index+1)*dy
+                    # text=stat                    
+                    # if index ==0: 
+                    #     text="out"                    
+                    ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=font_scale,font=font, background_RGB=color, text_RGB=txt_color, alpha=0.2, thickness=thickness)
 
         except Exception as e:            
             LOGGER.error("An exception occurred to ps.putBText : %s" % e)

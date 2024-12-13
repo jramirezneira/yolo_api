@@ -15,7 +15,7 @@ options = {
 }
 
 # rtspServer= "192.168.1.159"#, _ =getConfProperty("rtspServer") 
-rtspServer= "192.168.1.167:8554/mystream"
+rtspServer= "127.0.0.1:8554/mystream"
 web =None
 
 def openStreamRtspServer():

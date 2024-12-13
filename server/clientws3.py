@@ -15,7 +15,7 @@ import threading
 import asyncio
 import time
 import numpy as np
-
+import os
 # create your own custom streaming class
 class Custom_Stream_Class:
 
@@ -41,7 +41,7 @@ class Custom_Stream_Class:
 
         rtspServer, _ =getConfProperty("rtspServer")  
         
-        self.writer = WriteGear(output="rtsp://%s:8554/mystream" % rtspServer, logging=False, **output_params)
+        self.writer = WriteGear(output="rtsp://%s:8554/mystream" % rtspServer, logging=True, **output_params)
         # output_params = {
         #     "-clones": ["-f", "lavfi", "-i", "anullsrc"],
         #     "-vcodec": "libx264",
@@ -104,7 +104,7 @@ class Custom_Stream_Class:
         else:
             self.SourceType="rtsp"        
 
-        options = {"STREAM_RESOLUTION": "720p", "CAP_PROP_FRAME_WIDTH":1280, "CAP_PROP_FRAME_HEIGHT":720 }
+        options = {"STREAM_RESOLUTION": "360p", "CAP_PROP_FRAME_WIDTH":640, "CAP_PROP_FRAME_HEIGHT":360 }
         self.source = CamGear(source=self.sourceVideo,  stream_mode=True if self.SourceType=="yt" else False,  logging=False, **options if self.SourceType=="yt" else {}).start()    
    
 
@@ -144,38 +144,41 @@ class Custom_Stream_Class:
                 if self.countImg % self.stride == 0:   
                     # check if frame is available
                     if frame is not None:
+                        # path = os.path.dirname(os.path.realpath(__file__))
+                        # cv2.imwrite(os.path.join(path , '4.jpg'), frame)
                         # cv2.imshow("RTSP View", frame)
-                        if self.SourceType=="rtsp":
-                            frame = image_resize(frame, height = 720)
+                        # if self.SourceType=="rtsp":
+                        #     frame = image_resize(frame, height = 360)
 
-                        if self.type=="detection":
-                            dict_result=dict()
-                            dict_result["verbose"] =False
-                            try:
-                                results = self.model.track(frame, persist=True,  imgsz=640,  show=False, **dict_result)                
-                                for ctr in self.counter:
-                                    frame = ctr.start_counting(frame, results) 
-                            except Exception as e:                                
-                                traceback.print_exception(type(e), e, e.__traceback__)    
-                        else:
-                            frame=self.seg.visualize_results_usual_yolo_inference(
-                                frame,
-                                # self.model,
-                                # imgsz=720,
-                                conf=0.35,
-                                iou=0.7,
-                                segment=True,
-                                thickness=4,
-                                show_boxes=False,
-                                fill_mask=True,
-                                alpha=0.8,
-                                random_object_colors=False,
-                                # list_of_class_colors=[(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50)],
-                                show_class=True,
-                                dpi=150,
-                            return_image_array=True,
+                        # if self.type=="detection":
+                        #     dict_result=dict()
+                        #     dict_result["verbose"] =False
+                        #     try:
+                        #         results = self.model.track(frame, persist=True,  imgsz=640,  show=False, **dict_result)                
+                        #         for ctr in self.counter:
+                        #             frame = ctr.start_counting(frame, results) 
+                        #     except Exception as e:                                
+                        #         traceback.print_exception(type(e), e, e.__traceback__)    
+                        # else:
+                        #     print(frame.size)
+                        #     frame=self.seg.visualize_results_usual_yolo_inference(
+                        #         frame,
+                        #         # self.model,
+                        #         # imgsz=720,
+                        #         conf=0.35,
+                        #         iou=0.7,
+                        #         segment=True,
+                        #         thickness=1,
+                        #         show_boxes=False,
+                        #         fill_mask=True,
+                        #         alpha=0.8,
+                        #         random_object_colors=True,
+                        #         # list_of_class_colors=[(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50)],
+                        #         show_class=False,
+                        #         dpi=150,
+                        #     return_image_array=True,
                             
-                                )
+                        #         )
                         
                         return frame
                     else:
@@ -214,7 +217,7 @@ class Custom_Stream_Class:
         self.timestamp=0
         
         # cl=Custom_Stream_Class(model, modelSeg)
-        blank_frame=np.zeros([720,1280,3],dtype=np.uint8)
+        blank_frame=np.zeros([360,640,3],dtype=np.uint8)
         black_frame=blank_frame[:]
         black_frame=create_blank_frame(frame=black_frame, text="")
         __frame_size_reduction = 20  # 20% reduction
@@ -243,11 +246,12 @@ class Custom_Stream_Class:
                 if frame is None:
                     frame=black_frame   
 
-                f_stream =  reducer(
-                            frame,
-                            percentage=__frame_size_reduction,
-                            interpolation=__interpolation,
-                        ) 
+                f_stream=frame
+                # f_stream =  reducer(
+                #             frame,
+                #             percentage=__frame_size_reduction,
+                #             interpolation=__interpolation,
+                #         ) 
                 # if f_stream is not None and youtube:  
                 if f_stream is not None:                      
                     self.writer.write(f_stream)

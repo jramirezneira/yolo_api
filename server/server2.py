@@ -111,6 +111,7 @@ def start():
             instance.setStride(stride)
         
         if instance.modelName != model_input or instance.type != type:
+            # model_input="FastSAM-s.pt"
             model = YOLO(model_input).to(device)
             LOGGER.info("Cambia type : %s" % type)
             LOGGER.info("Carga modelo : %s" % model_input)

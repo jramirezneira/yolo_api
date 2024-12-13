@@ -45,7 +45,8 @@ class ObjectCounter:
         self.in_counts = 0
         self.out_counts = 0
         self.counting_list = []
-        self.counting_list_by_class = []
+        self.counting_list_by_class_in = []
+        self.counting_list_by_class_out = []
         self.count_txt_thickness = 0
         self.count_txt_color = (0, 0, 0)
         self.count_color = (255, 255, 255)
@@ -165,9 +166,10 @@ class ObjectCounter:
         """Extracts and processes tracks for object counting in a video stream."""
         
         if len(self.reg_pts) == 4:
-            self.counting_list_by_class.clear()
+            self.counting_list_by_class_in.clear()
+            self.counting_list_by_class_out.clear()
         else:
-            self.region_thickness=10
+            self.region_thickness=3
          # Annotator Init and region drawing
         self.annotator = Annotator(self.im0, self.tf, self.names)
         # Draw region     
@@ -201,9 +203,13 @@ class ObjectCounter:
 
                 # Count objects
                 if len(self.reg_pts) == 4:
-                    if self.counting_region.contains(Point(track_line[-1])):
-                        self.counting_list_by_class.append([track_id, cls]) 
-                        box_label_reverse=True                    
+                    # if self.counting_region.contains(Point(track_line[-1])):
+                    #     if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
+                    #         self.counting_list_by_class_in.append([track_id, cls])                                             
+                    #     else:
+                    #         self.counting_list_by_class_out.append([track_id, cls])
+                        
+                    #     box_label_reverse=True                    
                        
                     if (
                         prev_position is not None
@@ -211,12 +217,16 @@ class ObjectCounter:
                         and track_id not in self.counting_list
                     ):
                         self.counting_list.append(track_id)
+                        if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
+                            self.counting_list_by_class_in.append([track_id, cls])                                             
+                        else:
+                            self.counting_list_by_class_out.append([track_id, cls])
                         
                         # self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
-                        if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
-                            self.in_counts += 1                                                
-                        else:
-                            self.out_counts += 1
+                        # if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
+                        #     self.in_counts += 1                                                
+                        # else:
+                        #     self.out_counts += 1
                             
 
                 elif len(self.reg_pts) == 2:                    
@@ -224,12 +234,15 @@ class ObjectCounter:
                         distance = Point(track_line[-1]).distance(self.counting_region)
                         if distance < self.line_dist_thresh and track_id not in self.counting_list:
                             self.counting_list.append(track_id)
-                            self.counting_list_by_class.append([track_id, cls])
-                            
+                            # self.counting_list_by_class.append([track_id, cls])
+                            print((box[0] - prev_position[0]) * (self.counting_region.centroid.x , prev_position[0]))
                             if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
-                                self.in_counts += 1                                                         
+
+                                self.in_counts += 1      
+                                self.counting_list_by_class_in.append([track_id, cls])                                                   
                             else:
                                 self.out_counts += 1
+                                self.counting_list_by_class_out.append([track_id, cls])
                                
                 # Draw bounding box
                 self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
@@ -240,15 +253,25 @@ class ObjectCounter:
         # for i in self.counting_list_by_class:
         #     self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
        
-        counts_label= []
-        if self.counting_list_by_class:            
-            try:
-                stats = Counter(list(list(zip(*self.counting_list_by_class))[1]))  
+        counts_label_in= []
+        counts_label_out= []
+              
+        try:
+            if self.counting_list_by_class_in:
+                stats = Counter(list(list(zip(*self.counting_list_by_class_in))[1]))  
                 stats=OrderedDict(stats.most_common())    
+                counts_label_in.append(f"In")
                 for stat in stats:
-                    counts_label.append(f"{self.names[stat]}: {str(stats[stat])}")
-            except Exception as e:      
-                traceback.print_exception(type(e), e, e.__traceback__)
+                    counts_label_in.append(f"{self.names[stat]}: {str(stats[stat])}")
+
+            if self.counting_list_by_class_out:
+                stats = Counter(list(list(zip(*self.counting_list_by_class_out))[1]))  
+                stats=OrderedDict(stats.most_common())    
+                counts_label_out.append(f"Out")
+                for stat in stats:
+                    counts_label_out.append(f"{self.names[stat]}: {str(stats[stat])}")
+        except Exception as e:      
+            traceback.print_exception(type(e), e, e.__traceback__)
               
             
 
@@ -262,14 +285,15 @@ class ObjectCounter:
         # else:
         #    counts_label = f"{incount_label} {outcount_label}"
 
-        if counts_label is not None:
-            self.annotator.count_labels(
-                counts=counts_label,
-                count_txt_size=self.count_txt_thickness,
-                txt_color=self.count_txt_color,
-                color=self.count_color,
-                reg_counts=self.reg_counts
-            )
+      
+        self.annotator.count_labels(
+            countsIn=counts_label_in,
+            countsOut=counts_label_out,
+            count_txt_size=self.count_txt_thickness,
+            txt_color=self.count_txt_color,
+            color=self.count_color,
+            reg_counts=self.reg_counts
+        )
 
     def display_frames(self):
         """Display frame."""
