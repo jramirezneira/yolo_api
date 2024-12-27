@@ -85,7 +85,7 @@ class Segment_Stream_Class:
 
         # Perform inference
         extra_args = {} if inference_extra_args is None else inference_extra_args
-        predictions = self.model.predict(img, imgsz=imgsz, conf=conf, iou=iou, verbose=False, **extra_args)
+        predictions = self.model.track(img, imgsz=imgsz, persist=True, conf=conf, iou=iou, verbose=False, **extra_args)
 
         labeled_image = img.copy()
 
