@@ -93,7 +93,8 @@ if not (yt_dlp is None):
                 "extract_flat": True,
                 "skip_download": True,
 				# "proxy":proxy,
-                "update-to": "nightly"
+                "update-to": "nightly",
+                "cookies-from-browser":"firefox"
 
             }
             # remove any attribute from user dict

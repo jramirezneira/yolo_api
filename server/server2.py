@@ -12,8 +12,9 @@ import os
 import traceback
 from server.clientws3 import Custom_Stream_Class, Clientws
 from vidgear.gears.asyncio import WebGear_RTC
-from ultralytics import YOLO
+from ultralytics import NAS, YOLO, YOLOWorld
 from ultralytics import RTDETR
+from ultralytics import SAM
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
@@ -122,9 +123,16 @@ def start():
         
         # if instance.modelName is not None:
         if instance.modelName != model_input or instance.type != type:
+            print(type)
             # model_input="FastSAM-s.pt"
             if type=="detection-RTDETR":
                 model = RTDETR(model_input).to(device)
+            elif type=="detection-YOLO-World":
+                model = YOLOWorld(model_input).to(device)
+            elif type=="detection-YOLO-NAS":
+                model = NAS(model_input).to(device)
+            elif type=="segmentation-sam2":
+                model = SAM(model_input).to(device)
             else:
                 model = YOLO(model_input).to(device)
             LOGGER.info("Cambia type : %s" % type)

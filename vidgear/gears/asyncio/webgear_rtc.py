@@ -63,7 +63,7 @@ logger.setLevel(log.DEBUG)
 
 # add global vars
 VIDEO_CLOCK_RATE = 90000
-VIDEO_PTIME = 1 / 15  # 30fps
+VIDEO_PTIME = 1 / 30 # 30fps
 VIDEO_TIME_BASE = fractions.Fraction(1, VIDEO_CLOCK_RATE)
 
 aiortc = import_dependency_safe("aiortc", error="silent")
@@ -124,6 +124,7 @@ if not (aiortc is None):
             self.is_launched = False  # check if launched already
             self.is_running = False  # check if running
             self.__stream = None
+            self.__fps =15
 
             self.__frame_size_reduction = 20  # 20% reduction
             # retrieve interpolation for reduction
@@ -208,14 +209,15 @@ if not (aiortc is None):
             """
             VideoStreamTrack internal method for generating accurate timestamp.
             """
+            wait=0
             # check if ready state not live
             if self.readyState != "live":
                 # otherwise reset
                 self.stop()
             if hasattr(self, "_timestamp") and not self.__reset_enabled:
-                self._timestamp += int(VIDEO_PTIME * VIDEO_CLOCK_RATE)
+                self._timestamp += int(1/self.__fps * VIDEO_CLOCK_RATE)
                 wait = self._start + (self._timestamp / VIDEO_CLOCK_RATE) - time.time()
-                # print(wait)
+                # print("client "+str(wait))
                 await asyncio.sleep(wait)
                 
             else:
@@ -229,14 +231,14 @@ if not (aiortc is None):
                 if self.__reset_enabled:
                     self.__reset_enabled = False
                     self.is_running = True
-            return self._timestamp, VIDEO_TIME_BASE
+            return self._timestamp, VIDEO_TIME_BASE, wait
 
         async def recv(self):
             """
             A coroutine function that yields `av.frame.Frame`.
             """
             # get next time-stamp
-            pts, time_base = await self.next_timestamp()
+            pts, time_base, wait = await self.next_timestamp()
             
 
             # read video frame
@@ -244,11 +246,13 @@ if not (aiortc is None):
             if self.__stream is None:
                 raise MediaStreamError
             else:
-                f_stream = self.__stream.read()
-                print(f_stream.size)
+                f_stream, self.__fps = self.__stream.readFrame(wait)
+               
+          
 
             # display blank if NoneType
             if f_stream is None:
+                print("cae en none")
                 if self.blank_frame is None or not self.is_running:
                     raise MediaStreamError
                 else:
@@ -261,18 +265,18 @@ if not (aiortc is None):
                 if self.blank_frame is None:
                     self.blank_frame = create_blank_frame(
                         frame=f_stream,
-                        text="No Input" if self.__enable_inf else "",
+                        text="No Input" if self.__enable_inf else "xxxxx",
                         logging=self.__logging,
                     )
 
 
             # reducer frames size if specified
-            if self.__frame_size_reduction:
-                f_stream = await reducer(
-                    f_stream,
-                    percentage=self.__frame_size_reduction,
-                    interpolation=self.__interpolation,
-                )
+            # if self.__frame_size_reduction:
+            #     f_stream = await reducer(
+            #         f_stream,
+            #         percentage=self.__frame_size_reduction,
+            #         interpolation=self.__interpolation,
+            #     )
 
             # construct `av.frame.Frame` from `numpy.nd.array`
             # based on available channels in frames

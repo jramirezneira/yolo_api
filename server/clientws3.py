@@ -16,9 +16,10 @@ import asyncio
 import time
 import numpy as np
 import queue
-
+import os
 import uvicorn
 from vidgear.gears.asyncio import WebGear_RTC
+from ultralytics import SAM
 # create your own custom streaming class
 class Clientws:
     def __init__(self):
@@ -28,7 +29,7 @@ class Clientws:
     def setStartServer(self):
         options = {
         "custom_stream": Custom_Stream_Class(),
-            # "frame_size_reduction": 5,
+            "frame_size_reduction": 5,
             "enable_live_broadcast": True,
             "enable_infinite_frames":True,
             "CAP_PROP_FPS":20
@@ -113,7 +114,7 @@ class Custom_Stream_Class:
     def setModelAndType(self, model, modelName, type):
         self.model=model
         self.modelName=modelName
-        if type=="segmentation":
+        if "seg" in type:
             self.seg = Segment_Stream_Class (self.model)
         
         self.type=type
@@ -147,20 +148,21 @@ class Custom_Stream_Class:
    
 
         self.counter=[]
+        if "detection" in self.type:
         
-        region_points_dict = [x for x in region_points if x['source'] == self.sourceVideo and x['available'] == 1][0]
-        print("pasa 13")
-        for i, rp in enumerate(region_points_dict["region_points"]):
-            print("pasa i")
-            ctr= object_counter.ObjectCounter()
-            ctr.set_args(view_img=False,
-                        reg_pts=rp,
-                        classes_names=self.model.names,
-                        draw_tracks=True,
-                        reg_counts=region_points_dict["reg_counts"][i]
-                        )
-            print(i)
-            self.counter.append(ctr)
+            region_points_dict = [x for x in region_points if x['source'] == self.sourceVideo and x['available'] == 1][0]
+            print("pasa 13")
+            for i, rp in enumerate(region_points_dict["region_points"]):
+                print("pasa i")
+                ctr= object_counter.ObjectCounter()
+                ctr.set_args(view_img=False,
+                            reg_pts=rp,
+                            classes_names=self.model.names,
+                            draw_tracks=True,
+                            reg_counts=region_points_dict["reg_counts"][i]
+                            )
+                print(i)
+                self.counter.append(ctr)
         
         self.countImg=0  
         
@@ -173,38 +175,42 @@ class Custom_Stream_Class:
             self.countImg= self.countImg+1
             # print(self.countImg)
             frame =  self.source.read()     
+            # path = os.path.dirname(os.path.realpath(__file__))
+            # cv2.imwrite(os.path.join(path , 'Town of Collingwood.jpg'), frame)
             
             if self.countImg % self.stride == 0:   
                 # check if frame is available
                 if frame is not None:
-                    # path = os.path.dirname(os.path.realpath(__file__))
-                    # cv2.imwrite(os.path.join(path , '4.jpg'), frame)
+                    
                     # cv2.imshow("RTSP View", frame)
                     if self.SourceType=="rtsp":
                         frame = image_resize(frame, height = 360)
+                        # path = os.path.dirname(os.path.realpath(__file__))
+                        # cv2.imwrite(os.path.join(path , 'camara1.jpg'), frame)
 
-                    if self.type=="detection" or self.type=="detection-RTDETR":
+                    if "detection" in self.type:
                         dict_result=dict()
                         dict_result["verbose"] =False
                         try:
                             results = self.model.track(frame, persist=True, device=0,  imgsz=[384,640],  show=False, **dict_result)                
-                            for ctr in self.counter:
-                                frame = ctr.start_counting(frame, results) 
+                            for index, ctr in enumerate(self.counter):
+                                frame = ctr.start_counting(frame, results, index) 
                         except Exception as e:                                
                             traceback.print_exception(type(e), e, e.__traceback__)    
-                    else:
+                    else:                       
                         frame=self.seg.visualize_results_usual_yolo_inference(
                             frame,
                             # self.model,
                             # imgsz=720,
+                            imgsz=[384,640],
                             conf=0.35,
                             iou=0.7,
                             segment=True,
-                            thickness=1,
+                            thickness=2,
                             show_boxes=False,
                             fill_mask=True,
-                            alpha=0.8,
-                            random_object_colors=True,
+                            alpha=0.9,
+                            random_object_colors=False,
                             # list_of_class_colors=[(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50),(231, 64, 50)],
                             show_class=False,
                             dpi=150,
@@ -218,8 +224,7 @@ class Custom_Stream_Class:
       
       
     
-    def restart(self):  
-        
+    def restart(self):          
         if self.source is not None:
             self.source.stop()
             self.source=None
@@ -227,7 +232,7 @@ class Custom_Stream_Class:
                 while not self.__queue.empty():
                     try:
                         self.__queue.get_nowait()
-                        print("after restart "+str(self.__queue.qsize()))
+                        # print("after restart "+str(self.__queue.qsize()))
                     except queue.Empty:
                         continue
                     self.__queue.task_done()
@@ -251,16 +256,18 @@ class Custom_Stream_Class:
 
         if self.source is not None:
             if self.countImg % self.stride == 0:
-                if size >= 50 and size > self.size_prev:
-                        self.fps=self.fps* (1 + size*0.1/96)
+                if size >= 50 and size > self.size_prev and self.fps <= 30/self.stride:
+                    self.fps=self.fps* (1 + size*0.1/96)
                 if size < 50 and size < self.size_prev:
                     if size==0:
                         size=1
                     self.fps=self.fps*(1 - size*0.1/50)  
         
         if self.source is None or size==0:
-            return self.lastImage, self.fps 
-        self.lastImage=self.__queue.get()
+            self.fps=30/self.stride
+            return self.black_frame, self.fps
+        else:
+            self.lastImage=self.__queue.get()
 
         if self.countImg % self.stride == 0:
             self.size_prev=size
@@ -291,5 +298,5 @@ class Custom_Stream_Class:
                 # self.running=False
                 LOGGER.error("An exception occurred in service : %s" % e)     
                 traceback.print_exception(type(e), e, e.__traceback__)
-                break
+                frame=self.black_frame
             

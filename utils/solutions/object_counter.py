@@ -1,6 +1,7 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 from collections import defaultdict
+import math
 
 import cv2
 
@@ -66,7 +67,7 @@ class ObjectCounter:
         reg_pts,
         reg_counts,
         count_reg_color=(255, 0, 255),
-        line_thickness=2,
+        line_thickness=1,
         track_thickness=2,
         view_img=False,
         view_in_counts=True,
@@ -130,6 +131,9 @@ class ObjectCounter:
         self.line_dist_thresh = line_dist_thresh
         self.reg_counts = reg_counts
 
+
+        
+
     def mouse_event_for_region(self, event, x, y, flags, params):
         """
         This function is designed to move region with mouse events in a real-time video stream.
@@ -162,7 +166,7 @@ class ObjectCounter:
             self.is_drawing = False
             self.selected_point = None
 
-    def extract_and_process_tracks(self, tracks):
+    def extract_and_process_tracks(self, tracks, index):
         """Extracts and processes tracks for object counting in a video stream."""
         
         if len(self.reg_pts) == 4:
@@ -217,10 +221,10 @@ class ObjectCounter:
                         and track_id not in self.counting_list
                     ):
                         self.counting_list.append(track_id)
-                        if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
-                            self.counting_list_by_class_in.append([track_id, cls])                                             
-                        else:
-                            self.counting_list_by_class_out.append([track_id, cls])
+                        # if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
+                        #     self.counting_list_by_class_in.append([track_id, cls])                                             
+                        # else:
+                        #     self.counting_list_by_class_out.append([track_id, cls])
                         
                         # self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
                         # if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
@@ -231,21 +235,41 @@ class ObjectCounter:
 
                 elif len(self.reg_pts) == 2:                    
                     if prev_position is not None:
-                        distance = Point(track_line[-1]).distance(self.counting_region)
-                        if distance < self.line_dist_thresh and track_id not in self.counting_list:
-                            self.counting_list.append(track_id)
-                            # self.counting_list_by_class.append([track_id, cls])
-                            print((box[0] - prev_position[0]) * (self.counting_region.centroid.x , prev_position[0]))
-                            if (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0:
 
-                                self.in_counts += 1      
-                                self.counting_list_by_class_in.append([track_id, cls])                                                   
-                            else:
-                                self.out_counts += 1
-                                self.counting_list_by_class_out.append([track_id, cls])
+                        
+                        
+                        # if track_id  in [x[0] for x in self.counting_list] and track_id not in [x[0] for x in self.counting_list_by_class_in + self.counting_list_by_class_out]:    
+                        if track_id  in self.counting_list and track_id not in [x[0] for x in self.counting_list_by_class_in + self.counting_list_by_class_out]:                            
+                            # track= next(filter(lambda x: x[0]== track_id, self.counting_list), None)  #[i for i in self.counting_list if i[0]==track_id]
+                            cX1 = track_line[-1][0]
+                            cY1 = track_line[-1][1]
+                            # distance = math.hypot(track[1][0]-cX1, track[1][1]-cY1)   # Point(track_line[-1]).distance(track[1])
+                            distance = Point(track_line[-1]).distance(self.counting_region)
+                            if distance > 20:
+                                aX= self.counting_region.bounds[0]
+                                aY= self.counting_region.bounds[1]
+                                bX= self.counting_region.bounds[2]
+                                bY= self.counting_region.bounds[3]
+                                val0 = ((bX - aX)*(cY1 - aY) - (bY - aY)*(cX1 - aX))
+                                thresh = 1e-9
+                                if val0 >= thresh:
+                                    self.in_counts += 1 
+                                    self.counting_list_by_class_in.append([track_id, cls]) 
+                                else:
+                                    self.out_counts += 1
+                                    self.counting_list_by_class_out.append([track_id, cls])
+                                   
+
+
+                        distance = Point(track_line[-1]).distance(self.counting_region)
+                        # if distance < self.line_dist_thresh and track_id not in [x[0] for x in self.counting_list]:
+                            # self.counting_list.append([track_id,track_line[-1]])    
+                        if distance < self.line_dist_thresh and track_id not in self.counting_list:
+                            self.counting_list.append(track_id)                        
                                
                 # Draw bounding box
-                self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
+                if index ==0:
+                    self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
                
           
             # incount_label = f"In Count : {self.in_counts}"
@@ -255,21 +279,36 @@ class ObjectCounter:
        
         counts_label_in= []
         counts_label_out= []
+        counts_label= []
+        statsIn= []
+        statsOut= []
+
               
         try:
             if self.counting_list_by_class_in:
-                stats = Counter(list(list(zip(*self.counting_list_by_class_in))[1]))  
-                stats=OrderedDict(stats.most_common())    
-                counts_label_in.append(f"In")
-                for stat in stats:
-                    counts_label_in.append(f"{self.names[stat]}: {str(stats[stat])}")
+                statsIn = Counter(list(list(zip(*self.counting_list_by_class_in))[1]))  
+                # statsIn=OrderedDict(statsIn.most_common())    
+                # counts_label_in.append(f"In")
+                # for stat in stats:
+                #     counts_label_in.append(f"{self.names[stat]}: {str(stats[stat])}")
 
             if self.counting_list_by_class_out:
-                stats = Counter(list(list(zip(*self.counting_list_by_class_out))[1]))  
-                stats=OrderedDict(stats.most_common())    
-                counts_label_out.append(f"Out")
-                for stat in stats:
-                    counts_label_out.append(f"{self.names[stat]}: {str(stats[stat])}")
+                statsOut = Counter(list(list(zip(*self.counting_list_by_class_out))[1]))  
+                # statsOut=OrderedDict(statsOut.most_common())    
+                # counts_label_out.append(f"Out")
+                # for stat in stats:
+                #     counts_label.append(f"{self.names[stat]}: {str(stat****************************************s[stat])}")
+           
+            counts_label.append(["", "out", "in"])
+            for name in self.names:
+                    countIn=statsIn[name] if name in [x for x in statsIn] else "-"
+                    countOut=statsOut[name] if name in [x for x in statsOut] else "-"
+
+                    if countIn !="-" or countOut !="-":
+                        counts_label.append([self.names[name], str(countIn), str(countOut)])
+
+
+           
         except Exception as e:      
             traceback.print_exception(type(e), e, e.__traceback__)
               
@@ -285,15 +324,51 @@ class ObjectCounter:
         # else:
         #    counts_label = f"{incount_label} {outcount_label}"
 
-      
-        self.annotator.count_labels(
-            countsIn=counts_label_in,
-            countsOut=counts_label_out,
-            count_txt_size=self.count_txt_thickness,
-            txt_color=self.count_txt_color,
-            color=self.count_color,
-            reg_counts=self.reg_counts
-        )
+        if counts_label:
+            self.annotator.count_labels(
+                count=counts_label,
+                # countsOut=counts_label_out,
+                count_txt_size=self.count_txt_thickness,
+                txt_color=self.count_txt_color,
+                color=self.count_color,
+                reg_counts=self.reg_counts
+            )
+
+    def get_line(x1, y1, x2, y2):
+        points = []
+        issteep = abs(y2-y1) > abs(x2-x1)
+        if issteep:
+            x1, y1 = y1, x1
+            x2, y2 = y2, x2
+        rev = False
+        if x1 > x2:
+            x1, x2 = x2, x1
+            y1, y2 = y2, y1
+            rev = True
+        deltax = x2 - x1
+        deltay = abs(y2-y1)
+        error = int(deltax / 2)
+        y = y1
+        ystep = None
+        if y1 < y2:
+            ystep = 1
+        else:
+            ystep = -1
+        for x in range(x1, x2 + 1):
+            if issteep:
+                points.append((y, x))
+            else:
+                points.append((x, y))
+            error -= deltay
+            if error < 0:
+                y += ystep
+                error += deltax
+        # Reverse the list if the coordinates were reversed
+        if rev:
+            points.reverse()
+        return points
+    
+
 
     def display_frames(self):
         """Display frame."""
@@ -308,7 +383,7 @@ class ObjectCounter:
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 return
 
-    def start_counting(self, im0, tracks):
+    def start_counting(self, im0, tracks, index):
         """
         Main function to start the object counting process.
 
@@ -325,9 +400,9 @@ class ObjectCounter:
             if tracks[0].boxes.id is None:
                 if self.view_img:
                     self.display_frames()
-                self.extract_and_process_tracks(None)
+                self.extract_and_process_tracks(None, index)
         # if tracks is None:
-        self.extract_and_process_tracks(tracks)
+        self.extract_and_process_tracks(tracks, index)
 
         if self.view_img:
             self.display_frames()

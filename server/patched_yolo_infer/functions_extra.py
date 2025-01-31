@@ -10,11 +10,15 @@ class Segment_Stream_Class:
     def __init__(self, model):
 
         self.model=model
-        self.class_names = model.names
+        if hasattr(model, 'names'):
+            self.class_names = model.names
+            print(model.names, type(model.names))
+        else:
+            self.class_names = {0:""}
         self.list_of_class_colors=[]
 
         for key in self.class_names:
-            random.seed(int(key) + 580)
+            random.seed(int(key) + 625)
             color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             self.list_of_class_colors.append(color)
 
@@ -31,7 +35,7 @@ class Segment_Stream_Class:
         show_boxes=True,
         show_class=True,
         fill_mask=False,
-        alpha=1,
+        alpha=0.9,
         color_class_background=(0, 0, 255),
         color_class_text=(255, 255, 255),
         thickness=4,
@@ -85,7 +89,9 @@ class Segment_Stream_Class:
 
         # Perform inference
         extra_args = {} if inference_extra_args is None else inference_extra_args
-        predictions = self.model.track(img, imgsz=imgsz, persist=True, conf=conf, iou=iou, verbose=False, **extra_args)
+        predictions = self.model.track(img, imgsz=imgsz, device=0, persist=True, conf=conf, iou=iou, verbose=False, **extra_args)
+       
+        self.class_names=predictions[0].names
 
         labeled_image = img.copy()
 

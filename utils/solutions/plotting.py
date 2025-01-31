@@ -15,7 +15,7 @@ from PIL import __version__ as pil_version
 from ultralytics.utils import LOGGER, TryExcept, ops, plt_settings, threaded
 from ultralytics.utils.checks import check_font, check_version, is_ascii
 from ultralytics.utils.files import increment_path
-import pyshine as ps
+# import pyshine as ps
 import traceback
 
 class Colors:
@@ -368,7 +368,7 @@ class Annotator:
     
    
 
-    def count_labels(self, countsIn=None, countsOut=None, count_txt_size=1, color=(255, 255, 255), txt_color=(0, 0, 0), reg_counts=None):
+    def count_labels(self, count=None, count_txt_size=1, color=(255, 255, 255), txt_color=(0, 0, 0), reg_counts=None):
         """
         Plot counts for object counter.
 
@@ -394,7 +394,15 @@ class Annotator:
         # text_x = (self.im.shape[1] - text_width) // 2  # Center x-coordinate
         # text_x = t_size_in[1]
 
+        longestName=max( [x[0] for x in count], key=len)
+        longestIn=max( [x[1] for x in count], key=len)
+        longestOut=max( [x[2] for x in count], key=len)
+
         text_x, text_y= reg_counts
+
+        name_width, name_height = cv2.getTextSize(longestName, font, fontScale=font_scale, thickness=thickness)[0]
+        In_width, in_height = cv2.getTextSize(longestIn, font, fontScale=font_scale, thickness=thickness)[0]
+        Out_width, out_height = cv2.getTextSize(longestOut, font, fontScale=font_scale, thickness=thickness)[0]
 
      
         
@@ -417,23 +425,38 @@ class Annotator:
         # image_new = cv2.addWeighted(overlay, alpha, self.im, 1 - alpha, 0)
 
          # if isnew:
+       
         try:
             y0, dy = text_y + 22, 20
-            y=0
-            if countsIn:
-                for index, stat in enumerate(countsIn):
-                    y = y0 + index+1*dy
-                    # if index ==0:  
-                    ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=font_scale,font=font, background_RGB=color, text_RGB=txt_color, alpha=0.2, thickness=thickness)
-            
-            if countsOut:
-                for index, stat in enumerate(countsOut):
-                    y0=y
+            # y, index=y0,0
+
+            # self.putTextImg(self.im, "", name_width, name_height, text_x, y, 5, 5, font_scale, color, 
+            #                      txt_color, font, thickness, 0.2)
+            # self.putTextImg(self.im, "out", In_width, in_height, text_x+name_width+10, y, 5, 5, font_scale, color, 
+            #                 txt_color, font, thickness, 0.2)
+            # self.putTextImg(self.im, "in", Out_width, out_height, text_x+name_width+In_width+20, y, 5, 5, font_scale, color, 
+            #                 txt_color, font, thickness, 0.2)
+
+
+            if count:
+                for index, stat in enumerate(count):
                     y = y0 + (index+1)*dy
-                    # text=stat                    
-                    # if index ==0: 
-                    #     text="out"                    
-                    ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=font_scale,font=font, background_RGB=color, text_RGB=txt_color, alpha=0.2, thickness=thickness)
+                    # if index ==0:  
+                    self.putTextImg(self.im, stat[0], name_width, name_height, text_x, y, 5, 5, font_scale, color, 
+                                 txt_color, font, thickness, 0.2)
+                    self.putTextImg(self.im, str(stat[1]), In_width, in_height, text_x+name_width+10, y, 5, 5, font_scale, color, 
+                                 txt_color, font, thickness, 0.2)
+                    self.putTextImg(self.im, str(stat[2]), Out_width, out_height, text_x+name_width+In_width+20, y, 5, 5, font_scale, color, 
+                                 txt_color, font, thickness, 0.2)
+            
+            # if countsOut:
+            #     y0=y+ dy
+            #     for index, stat in enumerate(countsOut):                    
+            #         y = y0 + index*dy
+            #         # text=stat                    
+            #         # if index ==0: 
+            #         #     text="out"                    
+            #         ps.putBText(self.im,stat,text_offset_x=text_x,text_offset_y=y,vspace=5,hspace=5, font_scale=font_scale,font=font, background_RGB=color, text_RGB=txt_color, alpha=0.2, thickness=thickness)
 
         except Exception as e:            
             LOGGER.error("An exception occurred to ps.putBText : %s" % e)
@@ -451,7 +474,21 @@ class Annotator:
    
         # self.im = cv2.addWeighted(overlay, alpha, self.im, 1 - alpha, 0)
             
-    def gettext(img,text,text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.0,background_RGB=(228,225,222),text_RGB=(1,1,1),font = cv2.FONT_HERSHEY_DUPLEX,thickness = 2,alpha=0.6,gamma=0):
+    def putTextImg(self, img,
+                text, 
+                text_width=0, 
+                text_height=0, 
+                text_offset_x=20,
+                text_offset_y=20,
+                vspace=10,
+                hspace=10, 
+                font_scale=1.0,
+                background_RGB=(228,225,222),
+                text_RGB=(1,1,1),
+                font = cv2.FONT_HERSHEY_DUPLEX,
+                thickness = 2,
+                alpha=0.6,
+                gamma=0):
         """
         Inputs:
         img: cv2 image img
@@ -471,7 +508,7 @@ class Annotator:
         """
         R,G,B = background_RGB[0],background_RGB[1],background_RGB[2]
         text_R,text_G,text_B = text_RGB[0],text_RGB[1],text_RGB[2]
-        (text_width, text_height) = cv2.getTextSize(text, font, fontScale=font_scale, thickness=thickness)[0]
+        # (text_width, text_height) = cv2.getTextSize(text, font, fontScale=font_scale, thickness=thickness)[0]
         x, y, w, h = text_offset_x, text_offset_y, text_width , text_height
         crop = img[y-vspace:y+h+vspace, x-hspace:x+w+hspace]
         white_rect = np.ones(crop.shape, dtype=np.uint8)
