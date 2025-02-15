@@ -16,9 +16,48 @@ from ultralytics import NAS, YOLO, YOLOWorld
 from ultralytics import RTDETR
 from ultralytics import SAM
 
+from facenet_pytorch import MTCNN, InceptionResnetV1
+from torch.utils.data import DataLoader
+from torchvision import datasets
+import pandas as pd
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using device: {device}')
 
+mtcnn = MTCNN(
+    image_size=160, margin=0, min_face_size=20,
+    thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
+    device=device
+)
+
+resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+workers = 0 if os.name == 'nt' else 4
+
+def collate_fn(x):
+    return x[0]
+
+dataset = datasets.ImageFolder('database')
+dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
+loader = DataLoader(dataset, collate_fn=collate_fn, num_workers=workers)
+
+aligned = []
+names = []
+for x, y in loader:
+    # print(type(x))
+    x_aligned, prob = mtcnn(x, return_prob=True)
+    if x_aligned is not None:
+        # print('Face detected with probability: {:8f}'.format(prob))
+        aligned.append(x_aligned)
+        names.append(dataset.idx_to_class[y])
+
+resnet.classify = True
+aligned = torch.stack(aligned).to(device)
+embeddings = resnet(aligned).detach().cpu()
+# [print(e1) for e1 in embeddings]
+# print(embeddings)
+
+# dists = [[(e1 - e2).norm().item() for e2 in embeddings] for e1 in embeddings]
+# print(pd.DataFrame(dists, columns=names, index=names))
 
 
 
@@ -42,32 +81,6 @@ def cv2DestroyAllWindows():
                 obj.stop()
             except Exception as e:
                 LOGGER.error("An exception occurred in source.stop() : %s" % e)
-           
-            # try:  
-            #     obj.cv2.destroyAllWindows()                   
-            # except Exception as e:
-            #     LOGGER.info("close obj.cv2.destroyAllWindows %s " % e)
-            
-            # try:  
-            #     obj.thrP.join()                   
-            # except Exception as e:
-            #     LOGGER.info("close obj.thrP.join() %s " % e)
-
-            # try:
-            #     del obj
-            # except Exception as e:
-            #     LOGGER.error("An exception occurred in del obj : %s" % e)
-
-       
-        # if isinstance(obj, Clientws):
-        #     try:               
-        #         obj.shutdown()
-        #     except Exception as e:
-        #         LOGGER.error("An exception occurred in del obj : %s" % e)
-
-
-            
-    
 
 
 setProperty("statusServer","offline")
@@ -124,17 +137,20 @@ def start():
         # if instance.modelName is not None:
         if instance.modelName != model_input or instance.type != type:
             print(type)
+            torch.cuda.empty_cache()
             # model_input="FastSAM-s.pt"
             if type=="detection-RTDETR":
-                model = RTDETR(model_input).to(device)
+                model = RTDETR(model_input)
             elif type=="detection-YOLO-World":
-                model = YOLOWorld(model_input).to(device)
+                model = YOLOWorld(model_input)
             elif type=="detection-YOLO-NAS":
-                model = NAS(model_input).to(device)
+                model = NAS(model_input)
             elif type=="segmentation-sam2":
-                model = SAM(model_input).to(device)
+                model = SAM(model_input)
+            elif "faceDetection":
+                model = YOLO(model_input)#MTCNN(image_size=160, keep_all=True, post_process=True, device=device)
             else:
-                model = YOLO(model_input).to(device)
+                model = YOLO(model_input)
             LOGGER.info("Cambia type : %s" % type)
             LOGGER.info("Carga modelo : %s" % model_input)
             instance.setModelAndType(model, model_input, type)       
@@ -165,32 +181,6 @@ def stop():
     
     print("pasa 8") 
     return jsonify(response)
-
-
-
-
-
-# def service ():
-   
-#     options = {
-#         "custom_stream": Custom_Stream_Class(),
-#     # "frame_size_reduction": 5,
-#       "enable_live_broadcast": True,
-#       "enable_infinite_frames":True,
-#       "CAP_PROP_FPS":20
-#     #   "CAP_PROP_FRAME_WIDTH":320, "CAP_PROP_FRAME_HEIGHT":240, "CAP_PROP_FPS":60
-# }
-#     # options = {"custom_stream": Custom_Stream_Class()}
-
-#     # initialize WebGear_RTC app without any source
-#     # web = WebGear_RTC(source="rtsp://127.0.0.1:8554/mystream", logging=True)#, **options)
-#     web = WebGear_RTC( logging=True, **options)
-
-#     # run this app on Uvicorn server at address http://localhost:8080/
-#     uvicorn.run(web(), host="0.0.0.0", port=5003)
-    
-#     # close app safely
-#     web.shutdown()
 
 
 

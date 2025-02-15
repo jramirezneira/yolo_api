@@ -3,6 +3,8 @@ import  cv2
 from vidgear.gears import CamGear, WriteGear
 from vidgear.gears.helper import create_blank_frame, reducer, retrieve_best_interpolation
 from utils.solutions import object_counter
+from utils.solutions.object_counter import  extract_and_process_face_detaction
+from ultralytics.engine.results import Results 
 from utils.general import image_resize, getConfProperty, setProperty
 from urllib.parse import urlparse
 import cv2
@@ -20,6 +22,16 @@ import os
 import uvicorn
 from vidgear.gears.asyncio import WebGear_RTC
 from ultralytics import SAM
+from facenet_pytorch import MTCNN, InceptionResnetV1
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from PIL import Image
+import requests
+from io import BytesIO
+from matplotlib import pyplot
+
+
+
 # create your own custom streaming class
 class Clientws:
     def __init__(self):
@@ -99,6 +111,99 @@ class Custom_Stream_Class:
         self.__queue = queue.Queue(maxsize=96)
         self.thrP = threading.Thread(target=self.between_callback,  args=(), kwargs={})
         self.thrP.start()
+        self.dict_result=dict()
+        self.dict_result["verbose"] =False
+
+        # self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # print(f'Using device: {self.device}')
+        # self.mtcnn = MTCNN(image_size=160, keep_all=True, post_process=True, device=self.device)
+        self.mtcnn =MTCNN(image_size=160, keep_all=True, post_process=True)
+        
+        self.resnet = None
+        
+        # self.resnet = self.resnet.to( device=self.device)
+
+        # workers = 0 if os.name == 'nt' else 4
+
+        # dataset = datasets.ImageFolder('database')
+        # dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
+        # loader = DataLoader(dataset, collate_fn=self.collate_fn, num_workers=workers)
+
+
+
+        self.candidate_image_embs=[]
+        self.candidate_image_face=[]
+        self.candidate_image_name=[]
+
+        # for x, y in loader:
+        #     candidate_emb, candidate_face = self.get_embedding_and_face(x)
+        #     if candidate_emb is None:
+        #         continue
+        #     else:
+        #         self.candidate_image_embs.append(candidate_emb)
+        #         self.candidate_image_face.append(dataset.idx_to_class[y])
+            
+        # for candidate_image_path in candidate_image_paths:
+        #     candidate_emb, candidate_face = self.get_embedding_and_face(candidate_image_path)
+        #     if candidate_emb is None:
+        #         continue
+        #     else:
+        #         self.candidate_image_embs.append(candidate_emb)
+        #         self.candidate_image_face.append(candidate_face)
+    #     self.mtcnn = MTCNN(
+    #                 image_size=160, keep_all=True,
+    #                 device=self.device)
+        
+    #     self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
+
+
+    #     workers = 0 if os.name == 'nt' else 4
+
+        
+
+    #     dataset = datasets.ImageFolder('database')
+    #     dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
+    #     loader = DataLoader(dataset, collate_fn=self.collate_fn, num_workers=workers)
+      
+    #     aligned = []
+    #     names = []
+    #     for x, y in loader:
+    #         # print(type(x))
+    #         # faces, probs = self.mtcnn(x, return_prob=True)
+    #         # if faces is None or len(faces) == 0:
+    #         #     continue
+    #         x_aligned, prob = self.mtcnn(x, return_prob=True)
+    #         if x_aligned is not None:
+    #             # print('Face detected with probability: {:8f}'.format(prob))
+    #             aligned.append(x_aligned)
+    #             names.append(dataset.idx_to_class[y])
+    #     aligned = torch.stack(aligned).to(self.device)
+    #     self.embeddings = self.resnet(aligned).detach().cpu()
+    #     # print(embeddings)
+    #         # embedding = self.resnet(faces[0].unsqueeze(0))
+    #         # self.target_images.append(faces[0], embedding, dataset.idx_to_class(y))
+
+    def collate_fn(self, x):
+        return x[0]
+        
+    def get_embedding_and_face(self, image):
+        """Load an image, detect the face, and return the embedding and face."""
+        # results = self.model.track(image, persist=True, device=0,  imgsz=[384,640],  show=False, **self.dict_result)
+        
+        
+       
+        faces, prob = self.mtcnn(image, return_prob=True)
+       
+
+        if faces is None or len(faces) == 0:
+            return None, None
+        
+        faces=faces.to(self.device)
+
+        embedding = self.resnet(faces[0].unsqueeze(0))
+        return embedding, faces[0]
+
+
 
 
 
@@ -116,6 +221,28 @@ class Custom_Stream_Class:
         self.modelName=modelName
         if "seg" in type:
             self.seg = Segment_Stream_Class (self.model)
+        if "faceDetection" in type:
+            self.resnet = InceptionResnetV1(pretrained='vggface2').eval()
+            self.resnet = self.resnet.to( device=self.device)
+
+            dataset = datasets.ImageFolder('database')
+            dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
+            loader = DataLoader(dataset, collate_fn=self.collate_fn, num_workers=0)
+
+
+
+            self.candidate_image_embs=[]
+            self.candidate_image_face=[]
+            self.candidate_image_name=[]
+
+            for x, y in loader:
+                candidate_emb, candidate_face = self.get_embedding_and_face(x)
+                if candidate_emb is None:
+                    continue
+                else:
+                    self.candidate_image_embs.append(candidate_emb)
+                    self.candidate_image_face.append(dataset.idx_to_class[y])
+     
         
         self.type=type
 
@@ -146,7 +273,7 @@ class Custom_Stream_Class:
         options = {"STREAM_RESOLUTION": "360p", "CAP_PROP_FRAME_WIDTH":640, "CAP_PROP_FRAME_HEIGHT":360 }
         self.source = CamGear(source=self.sourceVideo,  stream_mode=True if self.SourceType=="yt" else False,  logging=False, **options if self.SourceType=="yt" else {}).start()    
    
-
+      
         self.counter=[]
         if "detection" in self.type:
         
@@ -165,12 +292,15 @@ class Custom_Stream_Class:
                 self.counter.append(ctr)
         
         self.countImg=0  
+        if "faceDetection" in self.type:
+            self.object_counter= object_counter.ObjectCounter()
+           
         
         
 
     def read(self):
         while True:
-            if self.source is None:
+            if self.source is None or not self.countImg < self.source.frames:
                 break
             self.countImg= self.countImg+1
             # print(self.countImg)
@@ -180,8 +310,7 @@ class Custom_Stream_Class:
             
             if self.countImg % self.stride == 0:   
                 # check if frame is available
-                if frame is not None:
-                    
+                if frame is not None:                    
                     # cv2.imshow("RTSP View", frame)
                     if self.SourceType=="rtsp":
                         frame = image_resize(frame, height = 360)
@@ -189,15 +318,14 @@ class Custom_Stream_Class:
                         # cv2.imwrite(os.path.join(path , 'camara1.jpg'), frame)
 
                     if "detection" in self.type:
-                        dict_result=dict()
-                        dict_result["verbose"] =False
                         try:
-                            results = self.model.track(frame, persist=True, device=0,  imgsz=[384,640],  show=False, **dict_result)                
+                            results = self.model.track(frame, persist=True, imgsz=[384,640],  show=False, **self.dict_result)                
                             for index, ctr in enumerate(self.counter):
                                 frame = ctr.start_counting(frame, results, index) 
                         except Exception as e:                                
                             traceback.print_exception(type(e), e, e.__traceback__)    
-                    else:                       
+
+                    if "segmentation" in self.type:                       
                         frame=self.seg.visualize_results_usual_yolo_inference(
                             frame,
                             # self.model,
@@ -217,6 +345,60 @@ class Custom_Stream_Class:
                         return_image_array=True,
                         
                             )
+                    if "faceDetection" in self.type:      
+
+                        img = Image.fromarray(frame, 'RGB')
+                        results = self.model.track(img, persist=True, device=0,  imgsz=[384,640],  show=False, **self.dict_result) 
+
+                        boxes=results[0].boxes.xyxy.cpu()               
+                        faces=self.mtcnn.extract(img, boxes, save_path=None)
+
+                        
+                      
+                        
+                        # boxes, probs = self.model.detect(img, landmarks=False)
+                        # faces=self.model.extract(img, boxes, save_path=None)
+                        if faces is None or len(faces) == 0:
+                            return frame
+                        
+                        faces=faces.to(self.device)
+                        for face, box in zip(faces, boxes):
+                                                        # face = Image.fromarray(face)
+                            embedding = self.resnet(face.unsqueeze(0))
+                            if embedding is None:
+                                raise ValueError("No face detected in the target image.")
+
+                            highest_similarity = float('-inf')
+                            most_similar_image_path = None
+
+                            embedding=embedding.to(self.device)
+                            
+
+    
+                            for index, candidate_emb in enumerate(self.candidate_image_embs):  
+                                # candidate_emb=candidate_emb.to(self.device)
+                                similarity = torch.nn.functional.cosine_similarity(candidate_emb, embedding).item()
+                                if similarity > highest_similarity:
+                                    highest_similarity = similarity
+                                    most_similar_image_path = self.candidate_image_face[index]
+                            
+                            if highest_similarity < 0.4:
+                                return frame
+
+
+                            frame=self.object_counter.drawBoxes(frame, box, f"{most_similar_image_path}:{highest_similarity * 100:.0f}%" )
+
+                            if most_similar_image_path is None:
+                                raise ValueError("No faces detected in the candidate images.")
+
+                          
+
+
+                        # most_similar_image, similarity_score = self.find_most_similar(frame, self.countImg)
+                        # print(f"The most similar image is: {most_similar_image}")
+                        # print(f"Similarity score: {similarity_score * 100:.2f}%")
+                        return frame
+
                     
                     return frame
                 else:
@@ -252,13 +434,13 @@ class Custom_Stream_Class:
     def readFrame(self, wait):  
         self.wait=wait
         size=self.__queue.qsize() 
-        # print("size "+str(self.fps), size, self.size_prev)
+        print("size "+str(self.fps), size, self.size_prev)
 
         if self.source is not None:
             if self.countImg % self.stride == 0:
-                if size >= 50 and size > self.size_prev and self.fps <= 30/self.stride:
+                if size >= 50 and size >= self.size_prev and self.fps <= 30/self.stride:
                     self.fps=self.fps* (1 + size*0.1/96)
-                if size < 50 and size < self.size_prev:
+                if size < 50 and size < self.size_prev :
                     if size==0:
                         size=1
                     self.fps=self.fps*(1 - size*0.1/50)  
@@ -299,4 +481,9 @@ class Custom_Stream_Class:
                 LOGGER.error("An exception occurred in service : %s" % e)     
                 traceback.print_exception(type(e), e, e.__traceback__)
                 frame=self.black_frame
+                self.__queue.put(frame)
+
+
+    
+
             

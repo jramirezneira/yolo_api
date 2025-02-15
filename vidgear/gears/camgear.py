@@ -92,6 +92,9 @@ if not (yt_dlp is None):
                 "dump_single_json": True,
                 "extract_flat": True,
                 "skip_download": True,
+                # "reconnect":1,
+                # "reconnect_streamed":1,
+                # "reconnect_delay_max 5"
 				# "proxy":proxy,
                 "update-to": "nightly",
                 "cookies-from-browser":"firefox"
@@ -398,9 +401,12 @@ class CamGear:
 
         # initialize and assign frame-rate variable
         self.framerate = 0.0
+        self.frames = max(int(self.stream.get(cv2.CAP_PROP_FRAME_COUNT)), 0) or float('inf')
         _fps = self.stream.get(cv2.CAP_PROP_FPS)
         if _fps > 1.0:
             self.framerate = _fps
+
+        
 
         # applying time delay to warm-up webcam only if specified
         if time_delay and isinstance(time_delay, (int, float)):

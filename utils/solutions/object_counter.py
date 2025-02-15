@@ -7,13 +7,29 @@ import cv2
 
 from ultralytics.utils.checks import check_imshow, check_requirements
 from utils.solutions.plotting import Annotator, colors
-
+from facenet_pytorch import MTCNN, InceptionResnetV1
 check_requirements("shapely>=2.0.0")
 
 from shapely.geometry import LineString, Point, Polygon
 from collections import  Counter, OrderedDict
 import traceback
 
+
+    
+def extract_and_process_face_detaction(tracks, frame):
+    detected_objects = []
+    if hasattr(tracks, 'boxes') and hasattr(tracks, 'names'):
+        for box in tracks.boxes.xyxy:
+            object_id = int(box[-1])
+            object_name = tracks.names.get(object_id)
+            x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
+
+            object_image =  frame[int(y1):int(y2), int(x1):int(x2)]
+
+         
+
+
+            # detected_objects.append((object_name, object_image (x1, y1, x2, y2)))
 
 class ObjectCounter:
     """A class to manage the counting of objects in a real-time video stream based on their tracks."""
@@ -165,6 +181,8 @@ class ObjectCounter:
         elif event == cv2.EVENT_LBUTTONUP:
             self.is_drawing = False
             self.selected_point = None
+
+   
 
     def extract_and_process_tracks(self, tracks, index):
         """Extracts and processes tracks for object counting in a video stream."""
@@ -382,6 +400,13 @@ class ObjectCounter:
             # Break Window
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 return
+        
+    def drawBoxes(self, im0, box, class_name):
+        self.im0=im0
+        self.annotator = Annotator(self.im0,1)
+        self.annotator.box_label(box, label=class_name)
+            
+        return self.im0
 
     def start_counting(self, im0, tracks, index):
         """
@@ -407,6 +432,8 @@ class ObjectCounter:
         if self.view_img:
             self.display_frames()
         return self.im0#, self.counting_list_by_class
+    
+   
 
 
 if __name__ == "__main__":
