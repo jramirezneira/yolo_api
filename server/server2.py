@@ -148,9 +148,10 @@ def start():
             elif type=="segmentation-sam2":
                 model = SAM(model_input)
             elif "faceDetection":
-                model = YOLO(model_input)#MTCNN(image_size=160, keep_all=True, post_process=True, device=device)
+                model = YOLO("best.pt")#MTCNN(image_size=160, keep_all=True, post_process=True, device=device)
             else:
                 model = YOLO(model_input)
+            model=model.to(device)
             LOGGER.info("Cambia type : %s" % type)
             LOGGER.info("Carga modelo : %s" % model_input)
             instance.setModelAndType(model, model_input, type)       

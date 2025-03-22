@@ -20,12 +20,15 @@
 *.data
 *.json
 *.cfg
+*.mp4
 !setup.cfg
 !cfg/yolov3*.cfg
 
 storage.googleapis.com
 runs/*
 data/*
+database/*
+database3/*
 data/images/*
 !data/*.yaml
 !data/hyps
@@ -50,6 +53,7 @@ VOC/
 # Neural Network weights -----------------------------------------------------------------------------------------------
 *.weights
 *.pt
+*.pth
 *.pb
 *.onnx
 *.engine

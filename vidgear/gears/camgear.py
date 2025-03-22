@@ -24,6 +24,7 @@ import time
 import queue
 import logging as log
 from threading import Thread, Event
+import asyncio
 # from utils.general import getConfProperty
 
 # import helper packages
@@ -461,6 +462,7 @@ class CamGear:
         # or frames runs out
         # if the thread indicator variable is set, stop the thread
         while not self.__terminate.is_set():
+        # while self.stream.isOpened():
             # stream not read yet
             self.__stream_read.clear()
 
@@ -475,10 +477,14 @@ class CamGear:
                 # no frames received, then safely exit
                 if self.__threaded_queue_mode:
                     if self.__queue.empty():
+                        print("pasa 1")
                         break
                     else:
-                        continue
+                        print("pasa 2")
+                        self.stream.release()
+                        break
                 else:
+                    print("pasa 3")
                     break
 
             # apply colorspace to frames if valid
@@ -495,6 +501,7 @@ class CamGear:
                         )
                 except Exception as e:
                     # Catch if any error occurred
+                    print("pasa 4")
                     self.color_space = None
                     if self.__logging:
                         logger.exception(str(e))
@@ -528,16 +535,20 @@ class CamGear:
 
         **Returns:** A n-dimensional numpy array.
         """
+        
         while self.__threaded_queue_mode and not self.__terminate.is_set():
             return self.__queue.get(timeout=self.__thread_timeout)
         # return current frame
         # only after stream is read
-        return (
-            self.frame
-            if not self.__terminate.is_set()  # check if already terminated
-            and self.__stream_read.wait(timeout=self.__thread_timeout)  # wait for it
-            else None
-        )
+       
+            
+        if not self.__terminate.is_set() and self.__stream_read.wait(timeout=self.__thread_timeout):  # wait for it
+            print("lo hace if")
+            return self.frame
+        else: 
+            print("lo hace None")
+            return None
+        
 
     def stop(self):
         """

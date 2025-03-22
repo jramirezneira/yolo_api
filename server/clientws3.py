@@ -1,16 +1,13 @@
 # import necessary libs
 import  cv2
-from vidgear.gears import CamGear, WriteGear
+from vidgear.gears import CamGear
 from vidgear.gears.helper import create_blank_frame, reducer, retrieve_best_interpolation
 from utils.solutions import object_counter
-from utils.solutions.object_counter import  extract_and_process_face_detaction
-from ultralytics.engine.results import Results 
-from utils.general import image_resize, getConfProperty, setProperty
+from utils.general import image_resize, getConfProperty
 from urllib.parse import urlparse
 import cv2
 import torch
-from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
-from ultralytics.utils import LOGGER, ROOT, is_colab, is_kaggle, ops
+from ultralytics.utils import LOGGER
 from server.patched_yolo_infer.functions_extra import Segment_Stream_Class
 import traceback
 import threading
@@ -18,19 +15,42 @@ import asyncio
 import time
 import numpy as np
 import queue
-import os
 import uvicorn
 from vidgear.gears.asyncio import WebGear_RTC
-from ultralytics import SAM
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from PIL import Image
-import requests
-from io import BytesIO
-from matplotlib import pyplot
+from torchvision import transforms as T
+from collections import  Counter
+from torchvision.transforms import ToPILImage
+from torchvision.transforms import Grayscale
+from torchvision.transforms import ToTensor
+from torchvision.transforms import Resize
+from torchvision import transforms
+from neuraspike import EmotionNet
+import torch.nn.functional as nnf
+import torch.nn as nn
+import numpy as np
+import torchvision
 
 
+color=(255,0,0)
+line_thickness=2
+
+trans = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+data_transform = transforms.Compose([
+    ToPILImage(),
+    Grayscale(num_output_channels=1),
+    Resize((48, 48)),
+    ToTensor()
+])
 
 # create your own custom streaming class
 class Clientws:
@@ -86,6 +106,8 @@ class Custom_Stream_Class:
         output_params = {"-f": "rtsp", "-rtsp_transport": "tcp", "-bufsize":"100k"}   
 
         rtspServer, _ =getConfProperty("rtspServer")  
+
+        
         
         # self.writer = WriteGear(output="rtsp://%s:8554/mystream" % rtspServer, logging=True, **output_params)
         # output_params = {
@@ -117,83 +139,21 @@ class Custom_Stream_Class:
         # self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # print(f'Using device: {self.device}')
         # self.mtcnn = MTCNN(image_size=160, keep_all=True, post_process=True, device=self.device)
-        self.mtcnn =MTCNN(image_size=160, keep_all=True, post_process=True)
-        
-        self.resnet = None
-        
-        # self.resnet = self.resnet.to( device=self.device)
-
-        # workers = 0 if os.name == 'nt' else 4
-
-        # dataset = datasets.ImageFolder('database')
-        # dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
-        # loader = DataLoader(dataset, collate_fn=self.collate_fn, num_workers=workers)
-
-
-
+        self.mtcnn =MTCNN(image_size=160, keep_all=True, select_largest=False, post_process=True)
+       
+        self.resnet, self.modelAge, self.vid_writer = None, None, None     
+     
         self.candidate_image_embs=[]
         self.candidate_image_face=[]
-        self.candidate_image_name=[]
+        self.idsFaceRecognition=[]
 
-        # for x, y in loader:
-        #     candidate_emb, candidate_face = self.get_embedding_and_face(x)
-        #     if candidate_emb is None:
-        #         continue
-        #     else:
-        #         self.candidate_image_embs.append(candidate_emb)
-        #         self.candidate_image_face.append(dataset.idx_to_class[y])
-            
-        # for candidate_image_path in candidate_image_paths:
-        #     candidate_emb, candidate_face = self.get_embedding_and_face(candidate_image_path)
-        #     if candidate_emb is None:
-        #         continue
-        #     else:
-        #         self.candidate_image_embs.append(candidate_emb)
-        #         self.candidate_image_face.append(candidate_face)
-    #     self.mtcnn = MTCNN(
-    #                 image_size=160, keep_all=True,
-    #                 device=self.device)
-        
-    #     self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
-
-
-    #     workers = 0 if os.name == 'nt' else 4
-
-        
-
-    #     dataset = datasets.ImageFolder('database')
-    #     dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
-    #     loader = DataLoader(dataset, collate_fn=self.collate_fn, num_workers=workers)
-      
-    #     aligned = []
-    #     names = []
-    #     for x, y in loader:
-    #         # print(type(x))
-    #         # faces, probs = self.mtcnn(x, return_prob=True)
-    #         # if faces is None or len(faces) == 0:
-    #         #     continue
-    #         x_aligned, prob = self.mtcnn(x, return_prob=True)
-    #         if x_aligned is not None:
-    #             # print('Face detected with probability: {:8f}'.format(prob))
-    #             aligned.append(x_aligned)
-    #             names.append(dataset.idx_to_class[y])
-    #     aligned = torch.stack(aligned).to(self.device)
-    #     self.embeddings = self.resnet(aligned).detach().cpu()
-    #     # print(embeddings)
-    #         # embedding = self.resnet(faces[0].unsqueeze(0))
-    #         # self.target_images.append(faces[0], embedding, dataset.idx_to_class(y))
 
     def collate_fn(self, x):
         return x[0]
         
     def get_embedding_and_face(self, image):
-        """Load an image, detect the face, and return the embedding and face."""
-        # results = self.model.track(image, persist=True, device=0,  imgsz=[384,640],  show=False, **self.dict_result)
-        
-        
-       
-        faces, prob = self.mtcnn(image, return_prob=True)
-       
+        """Load an image, detect the face, and return the embedding and face."""       
+        faces = self.mtcnn(image, return_prob=False)       
 
         if faces is None or len(faces) == 0:
             return None, None
@@ -202,10 +162,6 @@ class Custom_Stream_Class:
 
         embedding = self.resnet(faces[0].unsqueeze(0))
         return embedding, faces[0]
-
-
-
-
 
     def setStride(self, stride):
         self.stride=stride
@@ -222,18 +178,17 @@ class Custom_Stream_Class:
         if "seg" in type:
             self.seg = Segment_Stream_Class (self.model)
         if "faceDetection" in type:
-            self.resnet = InceptionResnetV1(pretrained='vggface2').eval()
-            self.resnet = self.resnet.to( device=self.device)
+            self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
+
+            # self.modelAge = Model().to(self.device)
+            # self.modelAge.load_state_dict(torch.load("weights.pt", map_location="cpu"))
 
             dataset = datasets.ImageFolder('database')
             dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
             loader = DataLoader(dataset, collate_fn=self.collate_fn, num_workers=0)
 
-
-
             self.candidate_image_embs=[]
             self.candidate_image_face=[]
-            self.candidate_image_name=[]
 
             for x, y in loader:
                 candidate_emb, candidate_face = self.get_embedding_and_face(x)
@@ -243,7 +198,26 @@ class Custom_Stream_Class:
                     self.candidate_image_embs.append(candidate_emb)
                     self.candidate_image_face.append(dataset.idx_to_class[y])
      
-        
+            self.idsFaceRecognition=[]
+
+            # dictionary mapping for different outputs
+            self.emotion_dict = {0: "Angry", 1: "Fearful", 2: "Happy", 3: "Neutral",
+                            4: "Sad", 5: "Surprised"}
+
+            # load the emotionNet weights
+            self.modelEmoc = EmotionNet(num_of_channels=1, num_of_classes=len(self.emotion_dict))
+            model_weights = torch.load("42-bestmodel.pt")
+            self.modelEmoc.load_state_dict(model_weights)
+            self.modelEmoc.to(self.device)
+            self.modelEmoc.eval()
+
+            self.model_fair_7 = torchvision.models.resnet34(pretrained=True)
+            self.model_fair_7.fc = nn.Linear(self.model_fair_7.fc.in_features, 18)
+            self.model_fair_7.load_state_dict(torch.load('res34_fair_align_multi_4_20190809.pt'))
+            self.model_fair_7 = self.model_fair_7.to(self.device)
+            self.model_fair_7.eval()
+
+
         self.type=type
 
 
@@ -261,19 +235,21 @@ class Custom_Stream_Class:
 
         self.sourceVideo=sourceVideo
         region_points, _ =getConfProperty("region_points")  
-        
-        # self.wait=self.getWaitFrame()
 
-        # self.type=type
         if urlparse(self.sourceVideo).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):
             self.SourceType="yt"      
         else:
             self.SourceType="rtsp"        
 
         options = {"STREAM_RESOLUTION": "360p", "CAP_PROP_FRAME_WIDTH":640, "CAP_PROP_FRAME_HEIGHT":360 }
-        self.source = CamGear(source=self.sourceVideo,  stream_mode=True if self.SourceType=="yt" else False,  logging=False, **options if self.SourceType=="yt" else {}).start()    
-   
-      
+        # self.source = CamGear(source="https://www.youtube.com/watch?v=3yEubbOTof0",  stream_mode=True if self.SourceType=="yt" else False,  logging=False, **options if self.SourceType=="yt" else {}).start()    
+        self.source = CamGear(source="https://www.youtube.com/watch?v=wz_42pckM7w",  stream_mode=True if self.SourceType=="yt" else False,  logging=False, **options if self.SourceType=="yt" else {}).start()    
+        
+        self.vid_writer = cv2.VideoWriter(
+                "example.mp4", cv2.VideoWriter_fourcc(*"mp4v"), 25, (640, 360)
+            )
+        
+
         self.counter=[]
         if "detection" in self.type:
         
@@ -294,23 +270,21 @@ class Custom_Stream_Class:
         self.countImg=0  
         if "faceDetection" in self.type:
             self.object_counter= object_counter.ObjectCounter()
-           
-        
-        
+   
 
     def read(self):
         while True:
             if self.source is None or not self.countImg < self.source.frames:
-                break
+                return None
             self.countImg= self.countImg+1
             # print(self.countImg)
             frame =  self.source.read()     
             # path = os.path.dirname(os.path.realpath(__file__))
             # cv2.imwrite(os.path.join(path , 'Town of Collingwood.jpg'), frame)
-            
-            if self.countImg % self.stride == 0:   
+            if frame is not None:
+                if self.countImg % self.stride == 0:   
                 # check if frame is available
-                if frame is not None:                    
+                                    
                     # cv2.imshow("RTSP View", frame)
                     if self.SourceType=="rtsp":
                         frame = image_resize(frame, height = 360)
@@ -345,65 +319,196 @@ class Custom_Stream_Class:
                         return_image_array=True,
                         
                             )
-                    if "faceDetection" in self.type:      
+                    if "faceDetection" in self.type:  
 
                         img = Image.fromarray(frame, 'RGB')
-                        results = self.model.track(img, persist=True, device=0,  imgsz=[384,640],  show=False, **self.dict_result) 
-
-                        boxes=results[0].boxes.xyxy.cpu()               
-                        faces=self.mtcnn.extract(img, boxes, save_path=None)
-
+                        results = self.model.track(img, device=0, persist=True, imgsz=[384,640],  show=False, **self.dict_result)  
+                        boxes=results[0].boxes.xyxy.cpu()  
                         
+                        if results is None or results[0].boxes.id is None:
+                            return frame
                       
                         
-                        # boxes, probs = self.model.detect(img, landmarks=False)
-                        # faces=self.model.extract(img, boxes, save_path=None)
-                        if faces is None or len(faces) == 0:
-                            return frame
+                        faces=self.mtcnn.extract(img, boxes, save_path=None).to(self.device)
+                        track_ids=results[0].boxes.id.int().cpu().tolist()                       
                         
-                        faces=faces.to(self.device)
-                        for face, box in zip(faces, boxes):
-                                                        # face = Image.fromarray(face)
-                            embedding = self.resnet(face.unsqueeze(0))
-                            if embedding is None:
-                                raise ValueError("No face detected in the target image.")
 
-                            highest_similarity = float('-inf')
-                            most_similar_image_path = None
+                        facesList =[]  
+                        boxesList=[]
+                        track_idsList=[]
+                        facesEmocList =[]
+                        facesAgeList =[]
+                        track_idsEmocList=[]
+                        embeddings=[]
+                        # genders, ages= None, None
 
-                            embedding=embedding.to(self.device)
+                        if boxes is not None:
+                            for track_id, box, face in zip(track_ids, boxes, faces):
+
+                                if Counter([p[0] for p in self.idsFaceRecognition])[track_id] <=20:
+                                    facesList.append(face)  
+                                    boxesList.append(box)
+                                    track_idsList.append(track_id)
+
+                                (start_x, start_y, end_x, end_y) = np.asarray(box, dtype=int)                                
+                                faceEmoc = frame[start_y:end_y, start_x:end_x]
+                                # faceAge = frame[start_y:end_y, start_x:end_x]
+                                faceEmoc = data_transform(faceEmoc)
+                                faceAge= trans(face)
+                                facesEmocList.append(faceEmoc)
+                                facesAgeList.append(faceAge)
+                                track_idsEmocList.append(track_id)
+
+                            # if facesEmocList:
+                            facesEmocList = torch.stack(facesEmocList, dim=0).to(self.device)
+                            facesAgeList = torch.stack(facesAgeList, dim=0).to(self.device)
+                            predictionsEmoc = self.modelEmoc(facesEmocList).detach().cpu().to(self.device)
+                            predictionsAgegender = self.model_fair_7(facesAgeList).detach().cpu().to(self.device)
+                            # genders, ages = self.modelAge(facesAgeList)
+                            
+                              
+
+                            if facesList:
+                                facesList = torch.stack(facesList, dim=0).to(self.device)
+                                boxesList = torch.stack(boxesList, dim=0).to(self.device)
+                                embeddings = self.resnet(facesList).detach().cpu().to(self.device)
+                                # track_idsList = torch.stack(track_idsList, dim=0).to(self.device)
+                            # else:
+                            #     return frame
+                            # _, bs, c, h, w=aligned.shape
+                            # aligned=aligned.reshape(bs, c, h, w)
+
+                        # face_images = torch.stack(aligned)
+                        #     genders, ages = self.modelAge(aligned)
+                        #     genders = torch.round(genders)
+                        #     ages = torch.round(ages).long()
+
+                            # for i, box in enumerate(boxes):
+                            #     frame=self.object_counter.drawBoxes(frame, box, f"{'Man' if genders[i] == 0 else 'Woman'}: {ages[i].item()} years old" ) 
+
                             
 
-    
-                            for index, candidate_emb in enumerate(self.candidate_image_embs):  
-                                # candidate_emb=candidate_emb.to(self.device)
-                                similarity = torch.nn.functional.cosine_similarity(candidate_emb, embedding).item()
-                                if similarity > highest_similarity:
-                                    highest_similarity = similarity
-                                    most_similar_image_path = self.candidate_image_face[index]
                             
-                            if highest_similarity < 0.4:
-                                return frame
+                        # print(facesList.shape)
+                        
+                        
+                        # print(facesList.shape)
+                        # facesList = data_transform(facesList)
+                                
+                            predictionsEmoc = nnf.softmax(predictionsEmoc, dim=1)
+                            # top_p, top_class = prob.topk(1, dim=1)
+                            # top_p, top_class = top_p.item(), top_class.item()
+                            # emotion_prob = [p.item() for p in prob[0]]
+                            # emotion_value = self.emotion_dict.values()
+
+                            # genders = torch.round(genders)
+                            # ages = torch.round(ages).long()
+
+                        
+                            for trk_id, box, predEmoc, age in zip(track_ids, boxes, predictionsEmoc, predictionsAgegender):
+
+                                age = age.cpu().detach().numpy()
+                                age = np.squeeze(age)
+
+                                race_outputs = age[:7]
+                                gender_outputs = age[7:9]
+                                age_outputs = age[9:18]
+
+                                race_score = np.exp(race_outputs) / np.sum(np.exp(race_outputs))
+                                gender_score = np.exp(gender_outputs) / np.sum(np.exp(gender_outputs))
+                                age_score = np.exp(age_outputs) / np.sum(np.exp(age_outputs))
+
+                                race_pred = np.argmax(race_score)
+                                gender_pred = np.argmax(gender_score)
+                                age_pred = np.argmax(age_score)
+
+                                # race_scores_fair.append(race_score)
+                                # gender_scores_fair.append(gender_score)
+                                # age_scores_fair.append(age_score)
+
+                                # race_preds_fair.append(race_pred)
+                                # gender_preds_fair.append(gender_pred)
+                                # age_preds_fair.append(age_pred)
 
 
-                            frame=self.object_counter.drawBoxes(frame, box, f"{most_similar_image_path}:{highest_similarity * 100:.0f}%" )
+                                labelOutput = None
+                                prob_text=""
+                                line_thickness=1                                
+                                color=(0,130,0)
 
-                            if most_similar_image_path is None:
-                                raise ValueError("No faces detected in the candidate images.")
+                                top_p, top_class = predEmoc.topk(1, dim=0)
+                                top_p, top_class = top_p.item(), top_class.item()
 
-                          
+                                # emotion_prob = [p.item() for p in predEmoc]
+                                # emotion_value = self.emotion_dict.values()
+                                # if top_p > 0.5:
+                                face_emotion = self.emotion_dict[top_class]
+                                prob_text = f"{face_emotion}: {top_p * 100:.0f}%"
+                                    # print(prob_text)
+                                # for (i, (emotion, prob)) in enumerate(zip(emotion_value, emotion_prob)):
+                                #     prob_text = f"{emotion}: {prob * 100:.2f}%"
+                                #     width = int(prob * 300)
+                                #     print(prob_text)
+                                
+                                
 
-
-                        # most_similar_image, similarity_score = self.find_most_similar(frame, self.countImg)
-                        # print(f"The most similar image is: {most_similar_image}")
-                        # print(f"Similarity score: {similarity_score * 100:.2f}%")
-                        return frame
-
-                    
+                                if Counter([p[0] for p in self.idsFaceRecognition])[trk_id] >15:
+                                    # indx=track_ids.index(trk_id) 
+                                    # box= boxes[indx]
+                                    labelOutput=f"{[p[1] for p in self.idsFaceRecognition if p[0] == trk_id][0]}"
+                                else:
+                                    if trk_id in track_idsList: 
+                                        indx=track_idsList.index(trk_id) 
+                                        emb= embeddings[indx]                      
+                                        # box= boxesList[indx] 
+                                        for index, candidate_emb in enumerate(self.candidate_image_embs):                                                          
+                                            distance = (emb-candidate_emb).norm().item()
+                                            if distance < 0.95:  
+                                                color=(255,0,0)  
+                                                # print(Counter([p[0] for p in self.idsFaceRecognition])[track_id])
+                                                
+                                                # print(f"{track_id}:{distance}")
+                                                labelOutput = self.candidate_image_face[index]                                            
+                                                self.idsFaceRecognition.append([trk_id,labelOutput])
+                                                break
+                                        if labelOutput is None:
+                                            labelOutput="Unknown"
+                                            color=(0,0,255)
+                                            line_thickness=1
+                                        
+                                        
+                                
+                                frame=self.object_counter.drawBoxes(frame, box, f"{labelOutput}",f"{prob_text}", color=color,  line_thickness=line_thickness ) 
+                            
+                         
+                            
+                            # for index, candidate_emb in enumerate(self.candidate_image_embs):
+                            #     most_similar_image_path = None
+                                
+                            #     for emb, box in zip(embeddings, boxes):                      
+                            #         distance = (emb-candidate_emb).norm().item()
+                            #         bx=box
+                            #         if distance < 1.0:
+                            #             most_similar_image_path = self.candidate_image_face[index]
+                            #             break
+                            #     if most_similar_image_path is None:
+                            #         most_similar_image_path="Unknown person"
+                            
+                            #     frame=self.object_counter.drawBoxes(frame, bx, f"{most_similar_image_path}", color=(0,255,0) if  most_similar_image_path is None else (255,0,0)  ) 
                     return frame
-                else:
-                    return None
+            else:
+                return None
       
+    def transform(self, image):
+        """Transform input face image for the model."""
+        return T.Compose(
+            [
+                T.ToPILImage(),
+                T.Resize(64),
+                T.ToTensor(),
+                T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            ]
+        )(image)
       
     
     def restart(self):          
@@ -434,7 +539,7 @@ class Custom_Stream_Class:
     def readFrame(self, wait):  
         self.wait=wait
         size=self.__queue.qsize() 
-        print("size "+str(self.fps), size, self.size_prev)
+        print("size "+str(round(self.fps)), size, self.size_prev)
 
         if self.source is not None:
             if self.countImg % self.stride == 0:
@@ -454,7 +559,7 @@ class Custom_Stream_Class:
         if self.countImg % self.stride == 0:
             self.size_prev=size
 
-        return self.lastImage, self.fps
+        return self.lastImage, round(self.fps)
 
     async def service (self):    
        
@@ -462,11 +567,6 @@ class Custom_Stream_Class:
              
         while True:
             try:    
-                # self.fps_prev=self.fps
-                
-                    # if self.fps_prev >newfps:
-                    #     self.fps=self.fps*0.99
-
                 if self.__queue.qsize() >92:
                     await asyncio.sleep(self.wait)
 
