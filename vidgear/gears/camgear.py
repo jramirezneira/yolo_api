@@ -25,6 +25,7 @@ import queue
 import logging as log
 from threading import Thread, Event
 import asyncio
+from face_detector.face_detector import DnnDetector
 # from utils.general import getConfProperty
 
 # import helper packages
@@ -65,6 +66,8 @@ if not (yt_dlp is None):
             self.is_livestream = False
             self.streams_metadata = {}
             self.streams = {}
+
+            
 
             # define supported resolution values
             self.supported_resolutions = {
@@ -245,6 +248,7 @@ class CamGear:
         """
         # print current version
         logcurr_vidgear_ver(logging=logging)
+        self.face_detector = DnnDetector('face_detector')
 
         # enable logging if specified
         self.__logging = False
@@ -424,6 +428,7 @@ class CamGear:
 
             if self.__threaded_queue_mode:
                 # initialize and append to queue
+                # boxes = self.face_detector.detect_faces(self.frame)
                 self.__queue.put(self.frame)
         else:
             raise RuntimeError(
@@ -515,7 +520,9 @@ class CamGear:
 
             # append to queue
             if self.__threaded_queue_mode:
-                self.__queue.put(self.frame)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                boxes = self.face_detector.detect_faces(frame)
+                self.__queue.put((self.frame, boxes))
 
         # signal queue we're done
         self.__threaded_queue_mode and self.__queue.put(None)
@@ -543,10 +550,11 @@ class CamGear:
        
             
         if not self.__terminate.is_set() and self.__stream_read.wait(timeout=self.__thread_timeout):  # wait for it
-            print("lo hace if")
-            return self.frame
+            # print("lo hace if")
+            boxes = self.face_detector.detect_faces(self.frame)
+            return (self.frame, boxes)
         else: 
-            print("lo hace None")
+            # print("lo hace None")
             return None
         
 

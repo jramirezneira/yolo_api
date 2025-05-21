@@ -397,28 +397,62 @@ class ObjectCounter:
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 return
         
-    def drawBoxes(self, im0, box, label, label2, color=(255, 0, 0), line_thickness=1, txt_color=(255, 255, 255)):
+    def drawBoxes(self, im0, box, label, extra_label, color=(255, 0, 0), line_thickness=1, txt_color=(255, 255, 255)):
         # self.im0=im0
         # self.annotator = Annotator(self.im0,line_thickness)
         # self.annotator.box_label(box, label=class_name, color=color)
+        x, y, bw, bh= (int(box[0]), int(box[1]), int(box[2]), int(box[3]))
 
-        p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+        p1 = (x, y)
+        p2 = (x+bw, y+bh)
         cv2.rectangle(im0, p1, p2, color, thickness=line_thickness, lineType=cv2.LINE_AA)
         if label:
-            w, h = cv2.getTextSize(label, 0, fontScale=0.5, thickness=line_thickness)[0]  # text width, height
-            outside = p1[1] - h >= 3
-            p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
+            w_text, h_text = cv2.getTextSize(label, 0, fontScale=0.5, thickness=line_thickness)[0]  # text width, height
+            outside = p1[1] - h_text >= 3
+            p2 = p1[0] + w_text, p1[1] - h_text - 3 if outside else p1[1] + h_text + 3
             cv2.rectangle(im0, p1, p2, color, -1, cv2.LINE_AA)  # filled
-            cv2.putText(im0, label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2), 0, 0.5, txt_color, thickness=line_thickness,
+            cv2.putText(im0, label, (p1[0], p1[1] - 2 if outside else p1[1] + h_text + 2), 0, 0.5, txt_color, thickness=line_thickness,
                 lineType=cv2.LINE_AA,
              )
-            w, h = cv2.getTextSize(label2, 0, fontScale=0.5, thickness=line_thickness)[0]
-            p3=(int(box[0]),int(box[3]))
-            p4 = int(box[0])+w,  int(box[3]) + h + 3 
-            cv2.rectangle(im0, p3, p4, color, -1, cv2.LINE_AA)
-            cv2.putText(im0, label2, (p3[0], p3[1] +h+2), 0, 0.5, txt_color, thickness=line_thickness,
+            
+        p1=(x, y+bh)
+        p2=(x, y+bh)
+        h=0
+        for lbl in extra_label: 
+            p1=(x, p1[1]+h)
+            w, h = cv2.getTextSize(lbl, 0, fontScale=0.5, thickness=line_thickness)[0] 
+            p2=(p2[0], p2[1] + h + 3)         
+            cv2.rectangle(im0, p1, (p2[0]+w, p2[1]+5), color, -1, cv2.LINE_AA)
+            cv2.putText(im0, lbl, (p1[0], p1[1] +h+2), 0, 0.5, txt_color, thickness=line_thickness,
                 lineType=cv2.LINE_AA,
              )
+            h=h+5
+            
+        # if label2:
+        #     w, h = cv2.getTextSize(label2, 0, fontScale=0.5, thickness=line_thickness)[0]
+        #     p1=(x, y+bh)
+        #     p2 = x+w,  y+bh + h + 3 
+        #     cv2.rectangle(im0, p1, p2, color, -1, cv2.LINE_AA)
+        #     cv2.putText(im0, label2, (p1[0], p1[1] +h+2), 0, 0.5, txt_color, thickness=line_thickness,
+        #         lineType=cv2.LINE_AA,
+        #      )
+        
+        # if label3:
+        #     w, h = cv2.getTextSize(label3, 0, fontScale=0.5, thickness=line_thickness)[0]
+        #     p5=(x,p3[1]+h+5)
+        #     p6 = x+w, p4[1]+ h + 3 
+        #     cv2.rectangle(im0, p5, p6, color, -1, cv2.LINE_AA)
+        #     cv2.putText(im0, label3, (p5[0], p5[1] +h+2), 0, 0.5, txt_color, thickness=line_thickness,
+        #         lineType=cv2.LINE_AA,
+        #      )
+        # if label4:
+        #     w, h = cv2.getTextSize(label4, 0, fontScale=0.5, thickness=line_thickness)[0]
+        #     p7=(x,p5[1]+h+5)
+        #     p8 = x+w, p6[1]+ h + 3 +3
+        #     cv2.rectangle(im0, p7, p8, color, -1, cv2.LINE_AA)
+        #     cv2.putText(im0, label4, (p7[0], p7[1] +h+2), 0, 0.5, txt_color, thickness=line_thickness,
+        #         lineType=cv2.LINE_AA,
+        #      )
             
         return im0
 
