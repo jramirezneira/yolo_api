@@ -43,43 +43,10 @@ import cv2
 import numpy as np
 import dlib
 
-# Modelo 3D de puntos faciales (nariz, mentón, ojos, boca)
-model_points = np.array([
-    (0.0, 0.0, 0.0),             # Punta de la nariz
-    (0.0, -330.0, -65.0),        # Mentón
-    (-225.0, 170.0, -135.0),     # Ojo izquierdo (esquina)
-    (225.0, 170.0, -135.0),      # Ojo derecho (esquina)
-    (-150.0, -150.0, -125.0),    # Boca izquierda
-    (150.0, -150.0, -125.0)      # Boca derecha
-])
-
-# Configuración de cámara (puedes adaptarla a tu resolución)
-size = (640, 480)
-focal_length = size[1]
-center = (size[1] // 2, size[0] // 2)
-camera_matrix = np.array([
-    [focal_length, 0, center[0]],
-    [0, focal_length, center[1]],
-    [0, 0, 1]
-], dtype="double")
-
-dist_coeffs = np.zeros((4,1))  # Asumimos sin distorsión
 
 
-trans = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Grayscale(num_output_channels=3),
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
 
-data_transform = transforms.Compose([
-    ToPILImage(),
-    Grayscale(num_output_channels=1),
-    Resize((48, 48)),
-    ToTensor()
-])
+
 
 def transform_batch(images):  # images: Tensor de forma (batch, C, H, W)
     # Convertir a escala de grises manteniendo 3 canales

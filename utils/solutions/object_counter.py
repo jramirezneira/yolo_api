@@ -7,7 +7,7 @@ import cv2
 
 from ultralytics.utils.checks import check_imshow, check_requirements
 from utils.solutions.plotting import Annotator, colors
-from facenet_pytorch import MTCNN, InceptionResnetV1
+# from facenet_pytorch import MTCNN, InceptionResnetV1
 check_requirements("shapely>=2.0.0")
 
 from shapely.geometry import LineString, Point, Polygon

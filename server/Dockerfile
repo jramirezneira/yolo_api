@@ -20,6 +20,7 @@ RUN apt-get update && \
 RUN apt-get -y install python3-opencv
 
 RUN pip install --trusted-host pypi.python.org -r requirements2.txt
+RUN pip install --trusted-host pypi.python.org -r requirements-nodeps.txt --
 
 # Exposing the flask app port from container to host
 EXPOSE 5001
