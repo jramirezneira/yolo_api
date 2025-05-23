@@ -1,4 +1,3 @@
-git # Base image
 FROM python:3.10.12-buster
 
 USER root
