@@ -6,7 +6,7 @@ USER root
 WORKDIR /usr/app
 
 # 2. Copia solo los archivos de dependencias primero
-COPY server/requirements2.txt server/requirements-nodeps.txt ./
+COPY requirements2.txt requirements-nodeps.txt ./
 
 # 3. Instala dependencias del sistema (en una sola capa para eficiencia)
 RUN apt-get update && \
