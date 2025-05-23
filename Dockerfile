@@ -15,7 +15,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 4. Instala dependencias de Python
-RUN pip install --trusted-host pypi.python.org -r requirements2.txt && \
+RUN pip install --trusted-host pypi.python.org -r requirements3.txt && \
     pip install --trusted-host pypi.python.org -r requirements-nodeps.txt --no-deps
 
 # 5. Ahora copia el resto del código
