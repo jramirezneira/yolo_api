@@ -9,10 +9,16 @@ WORKDIR /usr/app
 COPY requirements3.txt requirements-nodeps.txt ./
 
 # 3. Instala dependencias del sistema (en una sola capa para eficiencia)
+
 RUN apt-get update && \
-    apt-get install -y python3-pandas python3-opencv && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+        python3-pandas \
+        python3-opencv \
+        cmake \
+        build-essential \
+        python3-dev \
+        python3-pip \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 4. Instala dependencias de Python
 RUN pip install --trusted-host pypi.python.org -r requirements3.txt && \
